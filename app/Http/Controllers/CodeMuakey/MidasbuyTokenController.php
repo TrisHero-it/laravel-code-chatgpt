@@ -53,7 +53,6 @@ class MidasbuyTokenController extends Controller
     {
         $midasbuyToken = MidasbuyToken::findOrFail($id);
         $data = $request->validated();
-
         if ($request->hasFile('image')) {
 
             // Xóa ảnh cũ nếu có

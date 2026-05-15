@@ -24,7 +24,7 @@ class UpdateMidasbuyTokenRequest extends FormRequest
     {
         return [
             'image' => 'nullable|image|max:255',
-            'status' => "required|in:pending, completed, cancelled",
+            'status' => "required|in:pending,success,cancelled",
         ];
     }
 }

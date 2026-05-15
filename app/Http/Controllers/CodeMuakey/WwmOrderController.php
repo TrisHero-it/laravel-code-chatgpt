@@ -35,6 +35,14 @@ class WwmOrderController extends Controller
         return view('code-muakey.tools.where-wind-meet.create', compact('iosProducts'));
     }
 
+    public function store(Request $request)
+    {
+
+        WwmOrder::create($request->all());
+
+        return redirect()->back()->with('success', 'Đơn hàng đã được thêm thành công!');
+    }
+
     public function edit(Request $request, int $id)
     {
         $order = WwmOrder::findOrFail($id);
@@ -59,7 +67,7 @@ class WwmOrderController extends Controller
             $fileName = time() . '_' . $image->getClientOriginalName();
 
             // Thư mục lưu ảnh
-            $destinationPath = public_path('uploads/midasbuy-token');
+            $destinationPath = public_path('uploads/wwm');
 
             // Tạo folder nếu chưa tồn tại
             if (!file_exists($destinationPath)) {

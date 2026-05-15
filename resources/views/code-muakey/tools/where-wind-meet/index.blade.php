@@ -155,8 +155,8 @@
 
 <!-- Modals for Image -->
 <?php
-if (!empty($wwmOrders)) {
-    foreach ($wwmOrders as $order) {
+if (!empty($orders)) {
+    foreach ($orders as $order) {
         if (!empty($order['image'])) {
 ?>
             <!-- Modal for Order ID <?php echo $order['id'] ?> -->
@@ -170,7 +170,7 @@ if (!empty($wwmOrders)) {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body text-center">
-                            <img src="<?php echo htmlspecialchars($order['image']) ?>"
+                            <img src="{{ asset($order['image']) }}"
                                 alt="Image"
                                 class="img-fluid"
                                 style="max-height: 70vh; border-radius: 4px;">
