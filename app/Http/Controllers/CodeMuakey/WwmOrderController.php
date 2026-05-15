@@ -11,7 +11,20 @@ class WwmOrderController extends Controller
 {
     public function index()
     {
-        $orders = WwmOrder::all();
+        $query = WwmOrder::query();
+
+        if ($search = request()->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('order_id', 'like', "%{$search}%")
+                    ->orWhere('uid', 'like', "%{$search}%");
+            });
+        }
+
+        $orders = $query
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
         $iosProducts = $this->getProducts();
         return view('code-muakey.tools.where-wind-meet.index', compact('orders', 'iosProducts'));
     }

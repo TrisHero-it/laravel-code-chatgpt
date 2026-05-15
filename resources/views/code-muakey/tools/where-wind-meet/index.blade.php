@@ -44,9 +44,9 @@
         </div>
     </div>
     @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
     @endif
     <table class="table mt-3">
         <thead>
@@ -150,86 +150,7 @@
     </table>
 
     <!-- Phân trang -->
-    <?php if (isset($totalPages) && $totalPages > 1): ?>
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <?php
-                $currentPage = isset($currentPage) ? $currentPage : (isset($_GET['page']) ? (int)$_GET['page'] : 1);
-
-                // Xây dựng query string để giữ lại các tham số filter
-                $queryParams = [];
-                if (isset($_GET['category']) && $_GET['category'] !== '') {
-                    $queryParams[] = 'category=' . urlencode($_GET['category']);
-                }
-                if (isset($_GET['search_order_id']) && $_GET['search_order_id'] !== '') {
-                    $queryParams[] = 'search_order_id=' . urlencode($_GET['search_order_id']);
-                }
-                $queryString = !empty($queryParams) ? '&' . implode('&', $queryParams) : '';
-
-                // Nút Trước
-                if ($currentPage > 1):
-                ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=wwm-orders&page=<?php echo $currentPage - 1 ?><?php echo $queryString ?>">Trước</a>
-                    </li>
-                <?php else: ?>
-                    <li class="page-item disabled">
-                        <span class="page-link">Trước</span>
-                    </li>
-                <?php endif; ?>
-
-                <?php
-                // Hiển thị số trang
-                $startPage = max(1, $currentPage - 2);
-                $endPage = min($totalPages, $currentPage + 2);
-
-                if ($startPage > 1):
-                ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=wwm-orders&page=1<?php echo $queryString ?>">1</a>
-                    </li>
-                    <?php if ($startPage > 2): ?>
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    <?php endif; ?>
-                <?php endif; ?>
-
-                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                    <li class="page-item <?php echo $i == $currentPage ? 'active' : '' ?>">
-                        <a class="page-link" href="?act=wwm-orders&page=<?php echo $i ?><?php echo $queryString ?>"><?php echo $i ?></a>
-                    </li>
-                <?php endfor; ?>
-
-                <?php if ($endPage < $totalPages): ?>
-                    <?php if ($endPage < $totalPages - 1): ?>
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    <?php endif; ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=wwm-orders&page=<?php echo $totalPages ?><?php echo $queryString ?>"><?php echo $totalPages ?></a>
-                    </li>
-                <?php endif; ?>
-
-                <?php
-                // Nút Sau
-                if ($currentPage < $totalPages):
-                ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=wwm-orders&page=<?php echo $currentPage + 1 ?><?php echo $queryString ?>">Sau</a>
-                    </li>
-                <?php else: ?>
-                    <li class="page-item disabled">
-                        <span class="page-link">Sau</span>
-                    </li>
-                <?php endif; ?>
-            </ul>
-        </nav>
-        <div class="text-center mt-2">
-            <small>Trang <?php echo $currentPage ?> / <?php echo $totalPages ?> (Tổng: <?php echo isset($totalCount) ? $totalCount : 0 ?> đơn hàng)</small>
-        </div>
-    <?php endif; ?>
+    {{ $orders->links() }}
 </div>
 
 <!-- Modals for Image -->

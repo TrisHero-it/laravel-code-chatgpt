@@ -11,12 +11,20 @@ class MidasBuyJapanController extends Controller
 {
     public function index()
     {
-        $orders = MidasbuyJapanOrder::all();
+        $query = MidasbuyJapanOrder::query();
+
         if ($search = request()->query('search')) {
-            $orders = $orders->filter(function ($order) use ($search) {
-                return str_contains($order->order_id, $search) || str_contains((string)$order->uid, $search);
+            $query->where(function ($q) use ($search) {
+                $q->where('order_id', 'like', "%{$search}%")
+                    ->orWhere('uid', 'like', "%{$search}%");
             });
         }
+
+        $orders = $query
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
         return view('code-muakey.tools.midasbuy-japan.index', compact('orders'));
     }
 
@@ -78,6 +86,4 @@ class MidasBuyJapanController extends Controller
 
         return redirect()->route('midasbuy-japan.index')->with('success', 'Đơn hàng đã được xóa thành công!');
     }
-
-  
 }

@@ -150,73 +150,7 @@
     </table>
 
     <!-- Phân trang -->
-    <?php if (isset($totalPages) && $totalPages > 1): ?>
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <?php
-                $currentPage = isset($currentPage) ? $currentPage : (isset($_GET['page']) ? (int)$_GET['page'] : 1);
-                $statusParam = isset($_GET['status']) && $_GET['status'] != '' ? '&status=' . htmlspecialchars($_GET['status']) : '';
-                $searchParam = isset($_GET['search']) && $_GET['search'] != '' ? '&search=' . urlencode($_GET['search']) : '';
-
-                if ($currentPage > 1):
-                ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=midas-japan-orders&page=<?php echo $currentPage - 1 ?><?php echo $statusParam ?><?php echo $searchParam ?>">Trước</a>
-                    </li>
-                <?php else: ?>
-                    <li class="page-item disabled">
-                        <span class="page-link">Trước</span>
-                    </li>
-                <?php endif; ?>
-
-                <?php
-                $startPage = max(1, $currentPage - 2);
-                $endPage = min($totalPages, $currentPage + 2);
-
-                if ($startPage > 1):
-                ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=midas-japan-orders&page=1<?php echo $statusParam ?><?php echo $searchParam ?>">1</a>
-                    </li>
-                    <?php if ($startPage > 2): ?>
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    <?php endif; ?>
-                <?php endif; ?>
-
-                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                    <li class="page-item <?php echo $i == $currentPage ? 'active' : '' ?>">
-                        <a class="page-link" href="?act=midas-japan-orders&page=<?php echo $i ?><?php echo $statusParam ?><?php echo $searchParam ?>"><?php echo $i ?></a>
-                    </li>
-                <?php endfor; ?>
-
-                <?php if ($endPage < $totalPages): ?>
-                    <?php if ($endPage < $totalPages - 1): ?>
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    <?php endif; ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=midas-japan-orders&page=<?php echo $totalPages ?><?php echo $statusParam ?><?php echo $searchParam ?>"><?php echo $totalPages ?></a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?act=midas-japan-orders&page=<?php echo $currentPage + 1 ?><?php echo $statusParam ?><?php echo $searchParam ?>">Sau</a>
-                    </li>
-                <?php else: ?>
-                    <li class="page-item disabled">
-                        <span class="page-link">Sau</span>
-                    </li>
-                <?php endif; ?>
-            </ul>
-        </nav>
-        <div class="text-center text-muted mb-3">
-            <small>Trang <?php echo $currentPage ?> / <?php echo $totalPages ?> (Tổng: <?php echo $totalCount ?> đơn hàng)</small>
-        </div>
-    <?php endif; ?>
+    {{ $orders->links() }}
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 @endsection

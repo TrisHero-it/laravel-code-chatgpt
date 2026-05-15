@@ -12,7 +12,12 @@ class MidasbuyTokenController extends Controller
 {
     public function index()
     {
-        $midasbuyTokens = MidasbuyToken::all();
+        $query = MidasbuyToken::query();
+
+        $midasbuyTokens = $query
+            ->orderByDesc('id')
+            ->paginate(10);
+
         return view('code-muakey.tools.midasbuy-token.index', compact('midasbuyTokens'));
     }
 
