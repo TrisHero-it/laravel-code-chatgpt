@@ -14,6 +14,7 @@ Route::prefix('/tools')->middleware('auth.basic')->group(function () {
         'wwm-order' => App\Http\Controllers\CodeMuakey\WwmOrderController::class,
         'netflix' => App\Http\Controllers\CodeMuakey\NetflixController::class,
         'midasbuy-token' => App\Http\Controllers\CodeMuakey\MidasbuyTokenController::class,
+        'token-codes' => App\Http\Controllers\CodeMuakey\TokenCodeController::class,
     ]);
 
     Route::get("/netflix-export-form-add", [App\Http\Controllers\CodeMuakey\NetflixController::class, 'exportFormAdd'])->name('netflix.export-form-add');

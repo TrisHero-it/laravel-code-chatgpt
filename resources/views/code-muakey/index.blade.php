@@ -157,7 +157,7 @@ echo "<script>
 
                                                 tr.innerHTML =
                                                     '<td><a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="' + esc(item.verifyLink || '#') + '">Click here</a></td>' +
-                                                    '<th scope="row"><div class="media align-items-center"><a href="#" class="avatar rounded-circle mr-3"><img alt="Image placeholder" src="css/images/netflix.jpg"></a><div class="media-body"><span class="mb-0 text-sm">Netflix</span></div></div></th>' +
+                                                    '<th scope="row"><div class="media align-items-center"><a href="#" class="avatar rounded-circle mr-3"><img alt="Image placeholder" src="/css/logo/netflix.jpg"></a><div class="media-body"><span class="mb-0 text-sm">Netflix</span></div></div></th>' +
                                                     '<td><div class="d-flex align-items-center"><span class="badge badge-dot mr-4" style="color: red;">' + esc(item.subject || '') + '</span></div></td>' +
                                                     '<td><div class="d-flex align-items-center"><span class="badge badge-dot mr-4" style="color: black">' + esc(timeText) + '</span></div></td>' +
                                                     '<td><a href="https://muakey.com/">muakey.com</a></td>';
@@ -169,11 +169,10 @@ echo "<script>
                                             setLoading(true);
 
                                             $.ajax({
-                                                url: 'api.php',
+                                                url: '/api/search-netflix-account',
                                                 method: 'GET',
                                                 dataType: 'json',
                                                 data: {
-                                                    act: 'code-search',
                                                     email: email
                                                 },
                                                 success: function(res) {

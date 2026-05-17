@@ -26,7 +26,7 @@ class StoreMidasbuyTokenRequest extends FormRequest
             'order_id' => 'required|string|max:255',
             'token' => 'required|integer',
             'uid' => 'required|string|max:255',
-            'code' => 'required|string|max:255',
+            'code' => 'nullable|string|max:255',
             'status' => 'required|in:pending,completed,cancelled',
         ];
     }

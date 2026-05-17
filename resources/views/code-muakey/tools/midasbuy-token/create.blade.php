@@ -61,10 +61,6 @@
             <input type="text" class="form-control" id="token" name="token" placeholder="Nhập Token hoặc dán để phân tích" required>
         </div>
         <div class="form-group mt-3">
-            <label for="card">Code</label>
-            <input type="text" class="form-control" id="code" name="code" placeholder="Nhập code" maxlength="30">
-        </div>
-        <div class="form-group mt-3">
             <label for="sales_agent_id">Sales Agent ID <span class="text-muted">(Tùy chọn)</span></label>
             <input type="number" class="form-control" id="sales_agent_id" name="sales_agent_id" placeholder="Nhập ID đại lý (để trống nếu không có)" value="" min="1" step="1" style="max-width: 200px;">
         </div>

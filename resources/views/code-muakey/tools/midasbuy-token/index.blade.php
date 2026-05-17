@@ -8,6 +8,17 @@
             <h3>
                 Danh sách đơn hàng MidasBuy Japan Token
             </h3>
+
+
+            <div class="d-flex" style="gap: 8px; margin-top: 8px;">
+
+                <a href="{{ route('token-codes.create') }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> Thêm code token
+                </a>
+                <a href="{{ route('token-codes.index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list"></i> Danh sách code
+                </a>
+            </div>
         </div>
         <div class="d-flex" style="gap: 8px; height: 42px;">
             <a href="{{ route('manager-tools') }}" class="btn btn-secondary">Dashboard</a>
@@ -137,11 +148,11 @@
                                         <i class="fas fa-money-bill-wave"></i> Hoàn tiền
                                     </a>
                                 <?php endif; ?>
-                                <form action="{{ route('midasbuy-token.destroy', $midasbuyToken['id']   ) }}" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')" method="POST" style="display: inline;">
+                                <!-- <form action="{{ route('midasbuy-token.destroy', $midasbuyToken['id']   ) }}" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')" method="POST" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                </form>
+                                </form> -->
                             </div>
                         </td>
                     </tr>
