@@ -13,3 +13,9 @@ Route::get("/midasbuy-token-order", [App\Http\Controllers\Api\MidasbuyTokenContr
 
 Route::get("/token-code", [App\Http\Controllers\Api\TokenCodeController::class, 'index']);
 Route::get("/token-code/{id}", [App\Http\Controllers\Api\TokenCodeController::class, 'update']);
+
+Route::middleware('auth.basic')->group(function () {
+    Route::apiResources([
+        'midasbuy-tokens' => App\Http\Controllers\Api\MidasbuyTokenController::class,
+    ]);
+});

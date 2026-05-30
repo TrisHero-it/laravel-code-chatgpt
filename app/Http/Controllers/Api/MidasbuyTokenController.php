@@ -14,4 +14,10 @@ class MidasbuyTokenController extends Controller
             ->first();
         return response()->json($midasbuyToken);
     }
+
+    public function store(Request $request)
+    {
+        $midasbuyToken = MidasbuyToken::create($request->all());
+        return response()->json($midasbuyToken, 201);
+    }
 }

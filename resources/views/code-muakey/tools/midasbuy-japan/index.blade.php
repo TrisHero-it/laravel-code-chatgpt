@@ -10,7 +10,6 @@
         </div>
         <div class="d-flex" style="gap: 8px; height: 42px;">
             <a href="{{ route('manager-tools') }}" class="btn btn-secondary">Dashboard</a>
-            <a href="{{ route('midasbuy-japan.create') }}" class="btn btn-primary">Thêm đơn hàng</a>
         </div>
     </div>
     <?php if (isset($_GET['error'])): ?>
@@ -42,7 +41,7 @@
                 <div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i> Tìm kiếm
-                    </button>
+                    </button>   
                 </div>
             </form>
         </div>

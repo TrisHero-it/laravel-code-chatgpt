@@ -8,12 +8,20 @@ use Illuminate\Http\Request;
 
 class TokenCodeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $query = TokenCode::query();
 
-        if ($search = request()->query('search')) {
+        if ($search = $request->query('search')) {
             $query->where('code', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('token')) {
+            $query->where('token', $request->integer('token'));
+        }
+
+        if ($request->filled('status') && in_array($request->status, ['unused', 'used'], true)) {
+            $query->where('status', $request->status);
         }
 
         $tokenCodes = $query
@@ -21,7 +29,24 @@ class TokenCodeController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('code-muakey.tools.codes.index', compact('tokenCodes'));
+        $tokenOptions = [16, 80, 240, 400, 560, 830, 1245, 2508, 4180, 8360];
+
+        $unusedCountForToken = null;
+        $selectedToken = $request->filled('token') ? $request->integer('token') : null;
+
+        if ($selectedToken !== null) {
+            $unusedCountForToken = TokenCode::query()
+                ->where('token', $selectedToken)
+                ->where('status', 'unused')
+                ->count();
+        }
+
+        return view('code-muakey.tools.codes.index', compact(
+            'tokenCodes',
+            'tokenOptions',
+            'unusedCountForToken',
+            'selectedToken',
+        ));
     }
 
     public function create()

@@ -61,8 +61,8 @@
             <input type="text" class="form-control" id="token" name="token" placeholder="Nhập Token hoặc dán để phân tích" required>
         </div>
         <div class="form-group mt-3">
-            <label for="sales_agent_id">Sales Agent ID <span class="text-muted">(Tùy chọn)</span></label>
-            <input type="number" class="form-control" id="sales_agent_id" name="sales_agent_id" placeholder="Nhập ID đại lý (để trống nếu không có)" value="" min="1" step="1" style="max-width: 200px;">
+            <label for="sale_agent_id">Sales Agent ID <span class="text-muted">(Tùy chọn)</span></label>
+            <input type="number" class="form-control" id="sale_agent_id" name="sale_agent_id" placeholder="Nhập ID đại lý (để trống nếu không có)" value="" min="1" step="1" style="max-width: 200px;">
         </div>
         <div class="form-group mt-3">
             <label for="status">Trạng thái</label>
@@ -104,12 +104,18 @@
                 } else if (/^(Tên sản phẩm|Sản phẩm):\s*/i.test(line)) {
                     result.product = line.replace(/^(Tên sản phẩm|Sản phẩm):\s*/i, '').trim();
 
-                    // lấy số token đầu dòng sản phẩm
-                    var tokenMatch = result.product.match(/^(\d+)\s*Tokens?/i);
-                    if (tokenMatch) {
-                        result.token = tokenMatch[1];
-                    }
+                    // Ví dụ: "800 + 30 Tokens ..."
+                    var tokenMatch = result.product.match(/([\d\s+]+)\s*Tokens?/i);
 
+                    if (tokenMatch) {
+                        var total = tokenMatch[1]
+                            .split('+')
+                            .reduce(function(sum, num) {
+                                return sum + parseInt(num.trim() || 0, 10);
+                            }, 0);
+
+                        result.token = total.toString();
+                    }
                 } else if (/^UID/i.test(line)) {
                     var uidMatch = line.match(/:\s*(\d+)/);
                     if (uidMatch) {
@@ -136,7 +142,7 @@
         }
 
         document.getElementById('btn_parse').addEventListener('click', applyParse);
-        document.getElementById('order_paste').addEventListener('paste', function() {
+        document.getElementById('order_paste').addEventListener('change', function() {
             setTimeout(applyParse, 50);
         });
     })();

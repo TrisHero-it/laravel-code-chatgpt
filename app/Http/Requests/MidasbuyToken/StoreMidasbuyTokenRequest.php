@@ -23,11 +23,12 @@ class StoreMidasbuyTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id' => 'required|string|max:255',
+            'order_id' => 'required|string|max:255|unique:midasbuy_tokens,order_id',
             'token' => 'required|integer',
             'uid' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255',
+            'code' => 'nullable|string|max:255|unique:midasbuy_tokens,code',
             'status' => 'required|in:pending,completed,cancelled',
+            'sale_agent_id' => 'nullable|integer',
         ];
     }
 }

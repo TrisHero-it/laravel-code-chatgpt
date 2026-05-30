@@ -17,22 +17,56 @@
     </div>
     <div class="card mt-3 mb-3">
         <div class="card-body">
-            <form method="GET" action="" class="d-flex gap-2 align-items-end">
-                <div class="flex-grow-1">
-                    <label for="search" class="form-label">Tìm kiếm đơn hàng</label>
+            <form method="GET" action="{{ route('token-codes.index') }}" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Tìm kiếm code</label>
                     <input type="text"
                         class="form-control"
                         id="search"
                         name="search"
-                        placeholder="Code..."
-                        value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
+                        placeholder="Nhập code..."
+                        value="{{ request('search') }}">
                 </div>
-                <div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Tìm kiếm
+                <div class="col-md-3">
+                    <label for="token" class="form-label">Token</label>
+                    <select name="token" id="token" class="form-control">
+                        <option value="">Tất cả token</option>
+                        @foreach ($tokenOptions as $tokenValue)
+                            <option value="{{ $tokenValue }}" @selected(request('token') == $tokenValue)>
+                                {{ number_format($tokenValue, 0, '.', '') }} Tokens
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Trạng thái</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">Tất cả</option>
+                        <option value="unused" @selected(request('status') === 'unused')>Chưa sử dụng</option>
+                        <option value="used" @selected(request('status') === 'used')>Đã sử dụng</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-filter"></i> Lọc
                     </button>
+                    @if (request()->hasAny(['search', 'token', 'status']))
+                        <a href="{{ route('token-codes.index') }}" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
                 </div>
             </form>
+            @if ($selectedToken !== null)
+                <div class="alert alert-info mb-0 mt-3 py-2">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>{{ number_format($selectedToken, 0, '.', '') }} Tokens:</strong>
+                    còn <strong>{{ number_format($unusedCountForToken, 0, '.', '') }}</strong> code chưa sử dụng
+                    @if (request()->hasAny(['search', 'status']))
+                        <span class="text-muted">(tổng trong DB, không phụ thuộc bộ lọc code/trạng thái khác)</span>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
     <table class="table mt-3">
@@ -46,47 +80,46 @@
             </tr>
         </thead>
         <tbody>
-            <?php
-            if (empty($tokenCodes)) {
-            ?>
+            @forelse ($tokenCodes as $codeItem)
+                @php
+                    $isUnused = $codeItem->status === 'unused';
+                    $statusClass = $isUnused ? 'success' : 'danger';
+                    $statusText = $isUnused ? 'Chưa sử dụng' : 'Đã sử dụng';
+                @endphp
+                <tr>
+                    <td>{{ $codeItem->id }}</td>
+                    <td><strong>{{ $codeItem->code ?? 'N/A' }}</strong></td>
+                    <td>
+                        <span class="badge bg-primary">
+                            {{ number_format($codeItem->token, 0, '.', '') }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ $statusClass }}">{{ $statusText }}</span>
+                    </td>
+                    <td>
+                        <a onclick="return confirm('Bạn có chắc chắn muốn xóa code này không?')"
+                            href="?act=payment-code-delete&id={{ $codeItem->id }}"
+                            class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Xóa
+                        </a>
+                    </td>
+                </tr>
+            @empty
                 <tr>
                     <td colspan="5" class="text-center">
                         <div class="alert alert-warning mb-0">
-                            <strong><i class="fas fa-exclamation-triangle"></i> Cần phải thêm code!</strong>
-                            <p class="mb-0 mt-2">Hiện tại chưa có code nào trong hệ thống.</p>
+                            @if (request()->hasAny(['search', 'token', 'status']))
+                                <strong><i class="fas fa-search"></i> Không tìm thấy code</strong>
+                                <p class="mb-0 mt-2">Thử đổi bộ lọc hoặc <a href="{{ route('token-codes.index') }}">xóa bộ lọc</a>.</p>
+                            @else
+                                <strong><i class="fas fa-exclamation-triangle"></i> Cần phải thêm code!</strong>
+                                <p class="mb-0 mt-2">Hiện tại chưa có code nào trong hệ thống.</p>
+                            @endif
                         </div>
                     </td>
                 </tr>
-                <?php
-            } else {
-                foreach ($tokenCodes as $codeItem) {
-                    $status = $codeItem->status; // Giả sử 'status' là trường lưu trữ số token còn lại
-                    $statusClass = $status == "unused" ? 'success' : 'danger';
-                    $statusText = $status == "unused" ? 'Chưa sử dụng' : 'Đã sử dụng';
-                ?>
-                    <tr>
-                        <td><?php echo $codeItem['id'] ?></td>
-                        <td><strong><?php echo htmlspecialchars($codeItem['code'] ?? 'N/A') ?></strong></td>
-                        <td>
-                            <span class="badge bg-<?php echo $statusClass ?>">
-                                <?php echo number_format($codeItem->token, 0, '.', '') ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-<?php echo $statusClass ?>"><?php echo $statusText ?></span>
-                        </td>
-                        <td>
-                            <a onclick="return confirm('Bạn có chắc chắn muốn xóa code này không?')"
-                                href="?act=payment-code-delete&id=<?php echo $codeItem['id'] ?>"
-                                class="btn btn-danger btn-sm">
-                                <i class="fas fa-trash"></i> Xóa
-                            </a>
-                        </td>
-                    </tr>
-            <?php
-                }
-            }
-            ?>
+            @endforelse
         </tbody>
     </table>
     {{ $tokenCodes->links() }}

@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 
 class MidasBuyJapanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $query = MidasbuyJapanOrder::query();
 
-        if ($search = request()->query('search')) {
+        if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('order_id', 'like', "%{$search}%")
                     ->orWhere('uid', 'like', "%{$search}%");

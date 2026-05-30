@@ -20,7 +20,7 @@
                             <i class="fas fa-shopping-cart fa-3x text-primary"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <h4 class="card-title mb-0">Midasbuy-Japan</h4>
+                            <h4 class="card-title mb-0">Midasbuy Weekly Card</h4>
                             <p class="text-muted mb-0">Quản lý đơn hàng thông thường</p>
                         </div>
                     </div>

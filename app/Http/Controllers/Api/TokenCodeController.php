@@ -21,13 +21,24 @@ class TokenCodeController extends Controller
     {
         // Cập nhật trạng thái code token thành "used"
         $tokenCode = \App\Models\TokenCode::find($id);
-        if ($tokenCode) {
-            $tokenCode->status = 'used';
-            $tokenCode->save();
+        if ($request->filled("recover")) {
+            if ($tokenCode) {
+                $tokenCode->status = 'unused';
+                $tokenCode->save();
 
-            return response()->json(['message' => 'Code token đã được sử dụng.']);
+                return response()->json(['message' => 'Code token đã được khôi phục.']);
+            } else {
+                return response()->json(['message' => 'Không tìm thấy code token.'], 404);
+            }
         } else {
-            return response()->json(['message' => 'Không tìm thấy code token.'], 404);
+            if ($tokenCode) {
+                $tokenCode->status = 'used';
+                $tokenCode->save();
+
+                return response()->json(['message' => 'Code token đã được sử dụng.']);
+            } else {
+                return response()->json(['message' => 'Không tìm thấy code token.'], 404);
+            }
         }
     }
 }

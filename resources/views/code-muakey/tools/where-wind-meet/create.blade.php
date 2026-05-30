@@ -44,6 +44,7 @@
         <?php endif; ?>
 
         <form action="{{ route('wwm-order.store') }}" method="post" id="wwmOrderForm">
+            @csrf
             <div class="form-group mt-3">
                 <label for="order_data">Dán thông tin đơn hàng <span class="text-danger">*</span></label>
                 <textarea class="form-control" id="order_data" name="order_data" rows="6"

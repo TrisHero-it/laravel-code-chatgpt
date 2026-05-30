@@ -22,7 +22,6 @@
         </div>
         <div class="d-flex" style="gap: 8px; height: 42px;">
             <a href="{{ route('manager-tools') }}" class="btn btn-secondary">Dashboard</a>
-            <a href="{{ route('midasbuy-token.create') }}" class="btn btn-primary">Thêm đơn hàng</a>
         </div>
     </div>
     <!-- Form tìm kiếm -->
