@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'doitac' => [
+        'url' => env('DOITAC_API_URL', 'https://doitac.top/api/v1/api/orders'),
+        'token' => env('DOITAC_API_TOKEN'),
+    ],
+
 ];

@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <!-- WWM Orders Card -->
+        <!-- NetEase Card -->
         <div class="col-md-5 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -46,14 +46,14 @@
                             <i class="fas fa-gamepad fa-3x text-success"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <h4 class="card-title mb-0">WWM Orders</h4>
-                            <p class="text-muted mb-0">Quản lý đơn hàng Where Winds Meet</p>
+                            <h4 class="card-title mb-0">NetEase</h4>
+                            <p class="text-muted mb-0">Quản lý đơn hàng các game NetEase</p>
                         </div>
                     </div>
-                    <p class="card-text">Quản lý các đơn hàng game Where Winds Meet với thông tin UID và Product ID.</p>
+                    <p class="card-text">Quản lý các đơn hàng game NetEase (Where Winds Meet, Identity V, ...).</p>
                     <div class="d-grid gap-2">
-                        <a href="{{ route('wwm-order.index') }}" class="btn btn-success">
-                            <i class="fas fa-list"></i> Xem danh sách WWM Orders
+                        <a href="{{ route('netease-tools') }}" class="btn btn-success">
+                            <i class="fas fa-list"></i> Xem danh sách NetEase
                         </a>
                     </div>
                 </div>

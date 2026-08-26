@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MidasbuyToken\StoreMidasbuyTokenRequest;
 use App\Models\MidasbuyToken;
 use Illuminate\Http\Request;
 
@@ -15,9 +16,9 @@ class MidasbuyTokenController extends Controller
         return response()->json($midasbuyToken);
     }
 
-    public function store(Request $request)
+    public function store(StoreMidasbuyTokenRequest $request)
     {
-        $midasbuyToken = MidasbuyToken::create($request->all());
+        $midasbuyToken = MidasbuyToken::create($request->validated());
         return response()->json($midasbuyToken, 201);
     }
 }

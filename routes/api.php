@@ -6,10 +6,12 @@ Route::get('/midasbuy-japan-orders', [App\Http\Controllers\Api\MidasbuyJapanCont
 Route::get("/add-midasbuy-japan-order", [App\Http\Controllers\Api\MidasbuyJapanController::class, 'store']);
 
 Route::get('/where-wind-meet-order', [App\Http\Controllers\Api\WhereWindMeetController::class, 'index']);
+Route::get("/add-where-wind-meet-order", [App\Http\Controllers\Api\WhereWindMeetController::class, 'store']);
 
 Route::get("/search-netflix-account", [App\Http\Controllers\Api\CodeController::class, 'search']);
 
 Route::get("/midasbuy-token-order", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'index']);
+Route::get("/add-midasbuy-token-order", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'store']);
 
 Route::get("/token-code", [App\Http\Controllers\Api\TokenCodeController::class, 'index']);
 Route::get("/token-code/{id}", [App\Http\Controllers\Api\TokenCodeController::class, 'update']);
@@ -17,5 +19,6 @@ Route::get("/token-code/{id}", [App\Http\Controllers\Api\TokenCodeController::cl
 Route::middleware('auth.basic')->group(function () {
     Route::apiResources([
         'midasbuy-tokens' => App\Http\Controllers\Api\MidasbuyTokenController::class,
+        'midasbuy-weekly-cards' => App\Http\Controllers\Api\MidasbuyJapanController::class,
     ]);
 });

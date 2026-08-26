@@ -6,8 +6,6 @@
         <div class="d-flex justify-content-between">
 
             <h2 class="mb-5">Nhận code : <span style="color: red;">{{ $email ?? 'Vui lòng nhập email' }}</span></h2>
-
-
             <!-- Button trigger modal -->
             <button type="button" id="click" style="height: 22px;" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
                 Tìm kiếm theo email
@@ -71,7 +69,6 @@ echo "<script>
 </script>";
 }
 @endphp
-
 
 <div class="main-content">
     <div class="container mt-5">
@@ -155,8 +152,17 @@ echo "<script>
                                                     });
                                                 } catch (e) {}
 
+                                                var actionHtml;
+                                                if (item.verifyLink) {
+                                                    actionHtml = '<a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="' + esc(item.verifyLink) + '">Click here</a>';
+                                                } else if (item.code) {
+                                                    actionHtml = '<span class="badge bg-secondary" style="font-size: 1rem; letter-spacing: 2px;">' + esc(item.code) + '</span>';
+                                                } else {
+                                                    actionHtml = '';
+                                                }
+
                                                 tr.innerHTML =
-                                                    '<td><a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="' + esc(item.verifyLink || '#') + '">Click here</a></td>' +
+                                                    '<td>' + actionHtml + '</td>' +
                                                     '<th scope="row"><div class="media align-items-center"><a href="#" class="avatar rounded-circle mr-3"><img alt="Image placeholder" src="/css/logo/netflix.jpg"></a><div class="media-body"><span class="mb-0 text-sm">Netflix</span></div></div></th>' +
                                                     '<td><div class="d-flex align-items-center"><span class="badge badge-dot mr-4" style="color: red;">' + esc(item.subject || '') + '</span></div></td>' +
                                                     '<td><div class="d-flex align-items-center"><span class="badge badge-dot mr-4" style="color: black">' + esc(timeText) + '</span></div></td>' +

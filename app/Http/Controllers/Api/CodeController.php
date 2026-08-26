@@ -142,9 +142,12 @@ class CodeController extends Controller
             $messageId = $item['@id'] ?? null;
             $createdAtRaw = $item['createdAt'] ?? null;
 
+            $subject = $item['subject'] ?? '';
+
             if (!($fromName === 'Netflix' && $toAddr && mb_strtolower($toAddr, 'UTF-8') === $email)) continue;
             if (!$tokenForItem || !$messageId) continue;
             if (!$createdAtRaw) continue;
+            if (mb_stripos($subject, 'Mã đăng nhập', 0, 'UTF-8') !== false) continue;
 
             try {
                 $createdAt = new DateTime($createdAtRaw, new DateTimeZone('UTC'));
@@ -155,17 +158,22 @@ class CodeController extends Controller
 
             if ($createdAt < $cutoff) continue;
 
-            $verifyLink = $this->extractNetflixVerifyLink($tokenForItem, $messageId);
-            if (!$verifyLink) continue;
+            $html = $this->fetchMessageHtml($tokenForItem, $messageId);
+            if (!$html) continue;
+
+            $verifyLink = $this->extractNetflixVerifyLink($html);
+            $code = $verifyLink ? null : $this->extractNetflixVerifyCode($html);
+            if (!$verifyLink && !$code) continue;
 
             $items[] = [
                 'id' => $messageId,
-                'subject' => $item['subject'] ?? '',
+                'subject' => $subject,
                 'createdAt' => $createdAtRaw,
                 'verifyLink' => $verifyLink,
+                'code' => $code,
             ];
 
-            // lấy 10 mail mới nhất có link để tránh quá tải
+            // lấy 10 mail mới nhất có link/mã để tránh quá tải
             if (count($items) >= 10) break;
         }
 
@@ -176,7 +184,7 @@ class CodeController extends Controller
         ]);
     }
 
-    private function extractNetflixVerifyLink(string $token, string $messageId): ?string
+    private function fetchMessageHtml(string $token, string $messageId): ?string
     {
         $url = "https://api.mail.tm" . $messageId;
         $ch = curl_init();
@@ -197,6 +205,11 @@ class CodeController extends Controller
         if (is_array($html)) $html = $html[0] ?? null;
         if (!is_string($html) || $html === '') return null;
 
+        return $html;
+    }
+
+    private function extractNetflixVerifyLink(string $html): ?string
+    {
         libxml_use_internal_errors(true);
         $dom = new DOMDocument();
         $dom->loadHTML($html);
@@ -210,6 +223,24 @@ class CodeController extends Controller
         if (!$node instanceof DOMElement) return null;
         $href = $node->getAttribute('href');
         return $href !== '' ? $href : null;
+    }
+
+    private function extractNetflixVerifyCode(string $html): ?string
+    {
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        $dom->loadHTML($html);
+        libxml_clear_errors();
+
+        $xpath = new DOMXPath($dom);
+        $nodes = $xpath->query('//td[contains(@class,"lrg-number")]');
+        if (!$nodes || $nodes->length === 0) return null;
+
+        $text = trim($nodes->item(0)->textContent ?? '');
+        if ($text !== '' && preg_match('/\d{4,8}/', $text, $m)) {
+            return $m[0];
+        }
+        return null;
     }
 
     public function getToken(array $accounts)

@@ -2,8 +2,6 @@
 @section('title', 'Sửa đơn hàng MidasBuy Japan')
 @section('content')
 
-
-
 <div class="container mt-5">
     <h3>
         Sửa đơn hàng MidasBuy Japan
@@ -37,7 +35,7 @@
         </div>
         <div class="form-group mt-3">
             <label for="uid">UID <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" id="uid" name="uid" placeholder="Nhập UID (số)" value="{{ $order['uid'] ?? '' }}" required>
+            <input type="text" class="form-control" id="uid" name="uid" placeholder="Nhập UID (số)" value="{{ $order['uid'] ?? '' }}" required>
         </div>
         <div class="form-group mt-3">
             <label for="card">Card <span class="text-danger">*</span></label>

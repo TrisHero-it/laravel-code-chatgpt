@@ -11,7 +11,7 @@ class WwmOrderController extends Controller
 {
     public function index()
     {
-        $query = WwmOrder::query();
+        $query = WwmOrder::query()->where('category', 'where wind meet');
 
         if ($search = request()->query('search')) {
             $query->where(function ($q) use ($search) {
@@ -37,22 +37,24 @@ class WwmOrderController extends Controller
 
     public function store(Request $request)
     {
+        $data = $request->all();
+        $data['category'] = 'where wind meet';
 
-        WwmOrder::create($request->all());
+        WwmOrder::create($data);
 
         return redirect()->back()->with('success', 'Đơn hàng đã được thêm thành công!');
     }
 
     public function edit(Request $request, int $id)
     {
-        $order = WwmOrder::findOrFail($id);
+        $order = WwmOrder::where('category', 'where wind meet')->findOrFail($id);
         $iosProducts = $this->getProducts();
         return view('code-muakey.tools.where-wind-meet.edit', compact('order', 'iosProducts'));
     }
 
     public function update(UpdateWhereWindMeetRequest $request, int $id)
     {
-        $order = WwmOrder::findOrFail($id);
+        $order = WwmOrder::where('category', 'where wind meet')->findOrFail($id);
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
