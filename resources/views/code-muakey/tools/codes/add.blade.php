@@ -35,7 +35,8 @@
     </div>
 
     @endif
-    <form action="{{ route('token-codes.store') }}" method="post" id="paymentCodesForm">
+    <form action="/token-codes" method="post" id="paymentCodesForm">
+        @csrf
         <div class="form-group mt-3">
             <label for="codes">Danh sách code token <span class="text-danger">*</span></label>
             <textarea

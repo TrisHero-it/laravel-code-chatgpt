@@ -15,5 +15,7 @@ class WwmOrder extends Model
         'image',
         'product_id',
         'status',
+        'category',
+        'server',
     ];
 }
