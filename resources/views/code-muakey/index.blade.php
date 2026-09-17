@@ -191,8 +191,10 @@ echo "<script>
                                                     for (var i = 0; i < data.length; i++) append(data[i]);
                                                     setNo(false);
                                                 },
-                                                error: function() {
+                                                error: function(xhr) {
                                                     clearData();
+                                                    var msg = xhr.responseJSON && xhr.responseJSON.message;
+                                                    noRow.querySelector('div').textContent = msg || 'Không có kết quả';
                                                     setNo(true);
                                                 },
                                                 complete: function() {

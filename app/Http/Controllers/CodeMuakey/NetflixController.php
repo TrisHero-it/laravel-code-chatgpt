@@ -32,10 +32,14 @@ class NetflixController extends Controller
                 if ($dataExcel[0] === 'Email' && $dataExcel[1] === 'Password') {
                     continue;
                 }
+                if (trim((string) $dataExcel[0]) === '') {
+                    continue;
+                }
 
+                // Excel hay dư khoảng trắng và đổi mật khẩu toàn số thành kiểu số
                 $data[] = [
-                    'email' => $dataExcel[0],
-                    'password' => $dataExcel[1],
+                    'email' => mb_strtolower(trim((string) $dataExcel[0]), 'UTF-8'),
+                    'password' => trim((string) $dataExcel[1]),
                     'token2fa' => $dataExcel[2] ?? null,
                     'expired_at' => $dataExcel[3] ?? null,
                     'created_at' => now(),
@@ -46,8 +50,8 @@ class NetflixController extends Controller
         } else {
             $validated = $request->validated();
             Netflix::create([
-                'email' => $validated['email'],
-                'password' => $validated['password'],
+                'email' => mb_strtolower(trim($validated['email']), 'UTF-8'),
+                'password' => trim((string) $validated['password']),
                 'token2fa' => $validated['token2fa'] ?? null,
                 'expired_at' => $validated['expired_at'] ?? null,
                 'created_at' => now(),
@@ -56,6 +60,14 @@ class NetflixController extends Controller
         }
 
         return redirect()->back()->with('success', 'Tài khoản Netflix đã được thêm thành công.');
+    }
+
+    public function destroy($id)
+    {
+        $netflix = Netflix::findOrFail($id);
+        $netflix->delete();
+
+        return redirect()->route('netflix.index')->with('success', 'Tài khoản Netflix đã được xóa thành công.');
     }
 
     public function exportFormAdd()

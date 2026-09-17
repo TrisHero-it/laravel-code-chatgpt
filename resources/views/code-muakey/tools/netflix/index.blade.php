@@ -30,7 +30,11 @@
                     <td><?php echo $netflix->email ?></td>
                     <td><?php echo htmlspecialchars($netflix->password, ENT_QUOTES, 'UTF-8'); ?></td>
                     <td>
-                        <a onclick="return confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')" href="?act=delete&id=<?php echo $netflix->id ?>" class="btn btn-danger">Delete</a>
+                        <form action="{{ route('netflix.destroy', $netflix->id) }}" method="post">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')">Delete</button>
+                        </form>
                     </td>
                 </tr>
             <?php

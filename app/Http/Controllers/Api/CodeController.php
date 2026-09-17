@@ -19,43 +19,24 @@ class CodeController extends Controller
 
     public function search(Request $request)
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $email = mb_strtolower(trim((string) $request->email), 'UTF-8');
 
-        $emailParam = $request->email ?? '';
-        $email = $request->email ?? '';
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid email']);
-            exit;
-        }
-        if (!filter_var($emailParam, FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid email']);
-            exit;
-        }
-        $email = mb_strtolower(trim($emailParam), 'UTF-8');
-        if ($email === '') {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'email required']);
-            return;
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json(['success' => false, 'message' => 'Email không hợp lệ'], 400);
         }
 
-        $account = Netflix::query()->where('email', $email)->first();
+        // email trong DB có thể dư khoảng trắng / khác hoa thường (nhập từ Excel)
+        $account = Netflix::query()->whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
 
         if ($account != null) {
-            $password = str_replace('\\', '\\\\', $account['password']);
-            $password = str_replace('"', '\\"', $password);
-            $data = [
-                'address' => $account['email'],
-                'password' => $password
-            ];
-            $tokenResp = $this->getToken($data);
-            $tokenValue = isset($tokenResp) ? (json_decode($tokenResp)->token ?? null) : null;
+            // json_encode trong getToken đã tự escape, không escape thêm ở đây
+            $tokenResp = $this->getToken([
+                'address' => $email,
+                'password' => trim((string) $account['password']),
+            ]);
+            $tokenValue = $tokenResp ? (json_decode($tokenResp)->token ?? null) : null;
             if (!$tokenValue) {
-                http_response_code(401);
-                echo json_encode(['success' => false, 'message' => 'token invalid']);
-                return;
+                return response()->json(['success' => false, 'message' => 'Không đăng nhập được hộp thư (sai mật khẩu hoặc email không thuộc mail.tm)'], 401);
             }
             $tokens = [$tokenValue];
         } else {
@@ -144,7 +125,10 @@ class CodeController extends Controller
 
             $subject = $item['subject'] ?? '';
 
-            if (!($fromName === 'Netflix' && $toAddr && mb_strtolower($toAddr, 'UTF-8') === $email)) continue;
+            $fromAddr = $item['from']['address'] ?? '';
+            $isNetflix = mb_stripos((string) $fromName, 'netflix', 0, 'UTF-8') !== false
+                || mb_stripos((string) $fromAddr, 'netflix', 0, 'UTF-8') !== false;
+            if (!($isNetflix && $toAddr && mb_strtolower(trim($toAddr), 'UTF-8') === $email)) continue;
             if (!$tokenForItem || !$messageId) continue;
             if (!$createdAtRaw) continue;
             if (mb_stripos($subject, 'Mã đăng nhập', 0, 'UTF-8') !== false) continue;
@@ -177,7 +161,7 @@ class CodeController extends Controller
             if (count($items) >= 10) break;
         }
 
-        echo json_encode([
+        return response()->json([
             'success' => true,
             'message' => 'ok',
             'data' => $items,
@@ -216,7 +200,8 @@ class CodeController extends Controller
         libxml_clear_errors();
 
         $xpath = new DOMXPath($dom);
-        $nodes = $xpath->query('//a[contains(@href,"netflix.com/account/travel/verify")]');
+        // travel/verify: mã truy cập tạm thời, update-primary-location: cập nhật hộ gia đình
+        $nodes = $xpath->query('//a[contains(@href,"netflix.com/account/travel/verify") or contains(@href,"netflix.com/account/update-primary-location")]');
         if (!$nodes || $nodes->length === 0) return null;
 
         $node = $nodes->item(0);

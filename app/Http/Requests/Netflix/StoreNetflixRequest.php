@@ -25,7 +25,7 @@ class StoreNetflixRequest extends FormRequest
         return [
             'email' => 'nullable|email|unique:netflixes,email',
             'password' => 'nullable',
-            'token2fa' => 'nullable|string|255',
+            'token2fa' => 'nullable|string|max:255',
         ];
     }
 }
