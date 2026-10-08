@@ -69,6 +69,7 @@
                 <label for="status">Trạng thái</label>
                 <select class="form-control" id="status" name="status">
                     <option value="pending">Đang chờ</option>
+                    <option value="delayed">Đang hoãn (thiếu code token)</option>
                     <option value="success">Thành công</option>
                     <option value="cancelled">Đã huỷ</option>
                 </select>

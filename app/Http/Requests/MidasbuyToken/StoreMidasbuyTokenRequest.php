@@ -27,8 +27,20 @@ class StoreMidasbuyTokenRequest extends FormRequest
             'token' => 'required|integer',
             'uid' => 'required|string|max:255',
             'code' => 'nullable|string|max:255|unique:midasbuy_tokens,code',
-            'status' => 'required|in:pending,completed,cancelled',
-            'sale_agent_id' => 'nullable|integer',
+            // "completed" chưa bao giờ được dùng, trạng thái thật là "success".
+            // "delayed" là đơn bị hoãn vì thiếu code token.
+            'status' => 'required|in:pending,delayed,success,cancelled',
+            // Bắt buộc: thiếu id đơn đối tác thì không thể báo trạng thái về
+            // cho đối tác, tool sẽ gọi URL thiếu id và kẹt đơn đó mãi.
+            'sale_agent_id' => 'required|integer|min:1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'sale_agent_id.required' => 'Phải có ID đơn đối tác (sale_agent_id), nếu không tool sẽ không báo được trạng thái về đối tác.',
+            'sale_agent_id.min' => 'ID đơn đối tác (sale_agent_id) phải lớn hơn 0.',
         ];
     }
 }

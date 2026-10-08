@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\CodeMuakey;
 
 use App\Http\Controllers\Controller;
+use App\Support\EnrichesNeteaseProducts;
 use App\Http\Requests\UpdateBloodStrikeRequest;
 use App\Models\WwmOrder;
 use Illuminate\Http\Request;
 
 class BloodStrikeController extends Controller
 {
+    use EnrichesNeteaseProducts;
+
     protected string $category = 'blood strike';
 
     public function index()
@@ -27,13 +30,13 @@ class BloodStrikeController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.blood-strike.index', compact('orders', 'iosProducts'));
     }
 
     public function create()
     {
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.blood-strike.create', compact('iosProducts'));
     }
 
@@ -50,7 +53,7 @@ class BloodStrikeController extends Controller
     public function edit(Request $request, int $id)
     {
         $order = WwmOrder::where('category', $this->category)->findOrFail($id);
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.blood-strike.edit', compact('order', 'iosProducts'));
     }
 

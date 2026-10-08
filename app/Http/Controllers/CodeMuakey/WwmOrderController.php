@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\CodeMuakey;
 
 use App\Http\Controllers\Controller;
+use App\Support\EnrichesNeteaseProducts;
 use App\Http\Requests\UpdateWhereWindMeetRequest;
 use App\Models\WwmOrder;
 use Illuminate\Http\Request;
 
 class WwmOrderController extends Controller
 {
+    use EnrichesNeteaseProducts;
+
+    protected string $category = 'where wind meet';
+
     public function index()
     {
         $query = WwmOrder::query()->where('category', 'where wind meet');
@@ -25,13 +30,13 @@ class WwmOrderController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.where-wind-meet.index', compact('orders', 'iosProducts'));
     }
 
     public function create()
     {
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.where-wind-meet.create', compact('iosProducts'));
     }
 
@@ -48,7 +53,7 @@ class WwmOrderController extends Controller
     public function edit(Request $request, int $id)
     {
         $order = WwmOrder::where('category', 'where wind meet')->findOrFail($id);
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.where-wind-meet.edit', compact('order', 'iosProducts'));
     }
 

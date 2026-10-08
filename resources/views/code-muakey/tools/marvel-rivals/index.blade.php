@@ -102,6 +102,12 @@
                             foreach ($iosProducts as $product) {
                                 if ($product['goodsid'] == $order['product_id']) {
                                     echo htmlspecialchars($product['goodsinfo']);
+                                    if (!empty($product['price'])) {
+                                        echo ' <span class=\'badge bg-light text-dark\'>' . htmlspecialchars(rtrim(rtrim($product['price'], '0'), '.') . ' ' . $product['currency']) . '</span>';
+                                    }
+                                    if (isset($product['available']) && !$product['available']) {
+                                        echo ' <span class=\'badge bg-danger\'>Hết trên NetEase</span>';
+                                    }
                                     $productFound = true;
                                     break;
                                 }
@@ -126,6 +132,7 @@
                                     class="btn btn-primary btn-sm">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
+                                @include("code-muakey.tools.partials.netease-actions", ["order" => $order])
                             </div>
                         </td>
                     </tr>
@@ -175,4 +182,6 @@ if (!empty($orders)) {
 ?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+@include("code-muakey.tools.partials.netease-scripts")
+
 @endsection

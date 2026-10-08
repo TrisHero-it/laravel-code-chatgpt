@@ -81,6 +81,7 @@
             } else {
                 foreach ($midasbuyTokens as $midasbuyToken) {
                     $s = $midasbuyToken['status'] ?? 'pending';
+                    $statusTitle = '';
                     if ($s === 'success') {
                         $statusClass = 'success';
                         $statusText = 'Thành công';
@@ -90,6 +91,13 @@
                     } elseif ($s === 'refunded') {
                         $statusClass = 'info';
                         $statusText = 'Đã hoàn tiền';
+                    } elseif ($s === 'delayed') {
+                        $statusClass = 'dark';
+                        $delayedUntil = !empty($midasbuyToken['delayed_until'])
+                            ? date('H:i d/m', strtotime($midasbuyToken['delayed_until']))
+                            : null;
+                        $statusText = $delayedUntil ? 'Hoãn tới ' . $delayedUntil : 'Đang hoãn';
+                        $statusTitle = $midasbuyToken['delay_reason'] ?? 'Đang hoãn';
                     } else {
                         $statusClass = 'warning';
                         $statusText = 'Đang chờ';
@@ -101,7 +109,7 @@
                         <td><?php echo htmlspecialchars($midasbuyToken['uid'] ?? 'N/A') ?></td>
                         <td><strong><?php echo htmlspecialchars($midasbuyToken['code'] ?? 'N/A') ?></strong></td>
                         <td><?php echo htmlspecialchars($midasbuyToken['token'] ?? 'N/A') ?></td>
-                        <td><span class="badge bg-<?php echo $statusClass ?>"><?php echo $statusText ?></span></td>
+                        <td><span class="badge bg-<?php echo $statusClass ?>" title="<?php echo htmlspecialchars($statusTitle) ?>"><?php echo $statusText ?></span></td>
                         <td><?php echo isset($midasbuyToken['sale_agent_id']) && $midasbuyToken['sale_agent_id'] !== null && $midasbuyToken['sale_agent_id'] !== '' ? (int)$midasbuyToken['sale_agent_id'] : '—' ?></td>
                         <td><?php echo !empty($midasbuyToken['created_at']) ? date('d/m/Y H:i', strtotime($midasbuyToken['created_at'])) : '-' ?></td>
                         <td>

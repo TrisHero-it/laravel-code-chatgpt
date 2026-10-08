@@ -61,8 +61,9 @@
             <input type="text" class="form-control" id="token" name="token" placeholder="Nhập Token hoặc dán để phân tích" required>
         </div>
         <div class="form-group mt-3">
-            <label for="sale_agent_id">Sales Agent ID <span class="text-muted">(Tùy chọn)</span></label>
-            <input type="number" class="form-control" id="sale_agent_id" name="sale_agent_id" placeholder="Nhập ID đại lý (để trống nếu không có)" value="" min="1" step="1" style="max-width: 200px;">
+            <label for="sale_agent_id">Sales Agent ID <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="sale_agent_id" name="sale_agent_id" placeholder="Nhập ID đơn bên đối tác" value="{{ old('sale_agent_id') }}" min="1" step="1" style="max-width: 200px;" required>
+            <small class="text-muted">Bắt buộc — thiếu ID này thì tool không báo được trạng thái về đối tác.</small>
         </div>
         <div class="form-group mt-3">
             <label for="status">Trạng thái</label>

@@ -20,11 +20,21 @@ Route::prefix('/tools')->group(function () {
         'identity-order' => App\Http\Controllers\CodeMuakey\IdentityController::class,
         'blood-strike-order' => App\Http\Controllers\CodeMuakey\BloodStrikeController::class,
         'marvel-rivals-order' => App\Http\Controllers\CodeMuakey\MarvelRivalsController::class,
-        'netflix' => App\Http\Controllers\CodeMuakey\NetflixController::class,
+        'racing-master-order' => App\Http\Controllers\CodeMuakey\RacingMasterController::class,
         'midasbuy-token' => App\Http\Controllers\CodeMuakey\MidasbuyTokenController::class,
     ]);
 
+    // Tra cuu UID + mo trang nap chinh chu NetEase
+    Route::post("/netease/verify-uid", [App\Http\Controllers\CodeMuakey\NeteaseTopupController::class, "verifyUid"])->name("netease.verify-uid");
+    Route::get("/netease/topup/{order}", [App\Http\Controllers\CodeMuakey\NeteaseTopupController::class, "topupLink"])->name("netease.topup");
+
     Route::get("/netflix-export-form-add", [App\Http\Controllers\CodeMuakey\NetflixController::class, 'exportFormAdd'])->name('netflix.export-form-add');
+});
+
+Route::prefix('/tools')->group(function () {
+    Route::resources([
+        'netflix' => App\Http\Controllers\CodeMuakey\NetflixController::class,
+    ]);
 });
 
 Route::resources([

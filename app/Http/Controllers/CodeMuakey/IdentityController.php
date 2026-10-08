@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\CodeMuakey;
 
 use App\Http\Controllers\Controller;
+use App\Support\EnrichesNeteaseProducts;
 use App\Http\Requests\UpdateIdentityRequest;
 use App\Models\WwmOrder;
 use Illuminate\Http\Request;
 
 class IdentityController extends Controller
 {
+    use EnrichesNeteaseProducts;
+
     protected string $category = 'identity v';
 
     public function index()
@@ -27,13 +30,13 @@ class IdentityController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.identity.index', compact('orders', 'iosProducts'));
     }
 
     public function create()
     {
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.identity.create', compact('iosProducts'));
     }
 
@@ -50,7 +53,7 @@ class IdentityController extends Controller
     public function edit(Request $request, int $id)
     {
         $order = WwmOrder::where('category', $this->category)->findOrFail($id);
-        $iosProducts = $this->getProducts();
+        $iosProducts = $this->enrichWithNetease($this->getProducts(), $this->category);
         return view('code-muakey.tools.identity.edit', compact('order', 'iosProducts'));
     }
 

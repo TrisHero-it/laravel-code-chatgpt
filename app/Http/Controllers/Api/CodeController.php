@@ -12,6 +12,7 @@ use DOMElement;
 use DOMXPath;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CodeController extends Controller
 {
@@ -131,7 +132,6 @@ class CodeController extends Controller
             if (!($isNetflix && $toAddr && mb_strtolower(trim($toAddr), 'UTF-8') === $email)) continue;
             if (!$tokenForItem || !$messageId) continue;
             if (!$createdAtRaw) continue;
-            if (mb_stripos($subject, 'Mã đăng nhập', 0, 'UTF-8') !== false) continue;
 
             try {
                 $createdAt = new DateTime($createdAtRaw, new DateTimeZone('UTC'));
@@ -141,6 +141,10 @@ class CodeController extends Controller
             }
 
             if ($createdAt < $cutoff) continue;
+
+            // Chỉ nhận mail "Mã xác minh. Hết hạn sau 15 phút." và bản dịch của nó.
+            // Xét SAU mốc 15 phút để log tiêu đề-chưa-khớp chỉ ghi mail mới, khỏi ồn.
+            if (!$this->isVerifySubject((string) $subject)) continue;
 
             $html = $this->fetchMessageHtml($tokenForItem, $messageId);
             if (!$html) continue;
@@ -166,6 +170,66 @@ class CodeController extends Controller
             'message' => 'ok',
             'data' => $items,
         ]);
+    }
+
+    /**
+     * Tiêu đề có phải mail "Mã xác minh. Hết hạn sau 15 phút." hay không.
+     *
+     * Netflix gửi tiêu đề theo ngôn ngữ của từng tài khoản nên không so khớp
+     * được một chuỗi cố định. Danh sách từ/tiêu đề nằm ở config/netflix.php.
+     */
+    private function isVerifySubject(string $subject): bool
+    {
+        // Gộp khoảng trắng + bỏ hoa thường để tiêu đề có xuống dòng / 2 dấu cách
+        // vẫn khớp được.
+        $normalized = mb_strtolower(
+            trim(preg_replace('/\s+/u', ' ', $subject) ?? ''),
+            'UTF-8'
+        );
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        $config = config('netflix.verify_subject', []);
+
+        // 1. Mail "Mã đăng nhập" cũng hết hạn sau 15 phút -> phải loại trước
+        //    luật (3), nếu không sẽ lọt.
+        foreach ((array) ($config['exclude'] ?? []) as $word) {
+            if ($this->subjectContains($normalized, $word)) {
+                return false;
+            }
+        }
+
+        // 2. Tiêu đề nguyên văn đã biết.
+        foreach ((array) ($config['exact'] ?? []) as $exact) {
+            if ($this->subjectContains($normalized, $exact)) {
+                return true;
+            }
+        }
+
+        // 3. Lưới an toàn không phụ thuộc ngôn ngữ: có số 15 + một từ nghĩa là "phút".
+        if (preg_match('/(?<!\d)15(?!\d)/u', $normalized) === 1) {
+            foreach ((array) ($config['minute_words'] ?? []) as $word) {
+                if ($this->subjectContains($normalized, $word)) {
+                    return true;
+                }
+            }
+        }
+
+        // Ghi lại tiêu đề chưa khớp để biết Netflix dùng câu gì ở ngôn ngữ đó
+        // rồi bổ sung vào config/netflix.php -> verify_subject.exact
+        Log::info('netflix: tieu de bi loai', ['subject' => $subject]);
+
+        return false;
+    }
+
+    /** So khớp kiểu "chứa", đã chuẩn hoá sẵn phía gọi. */
+    private function subjectContains(string $normalizedSubject, string $needle): bool
+    {
+        $needle = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $needle) ?? ''), 'UTF-8');
+
+        return $needle !== '' && mb_strpos($normalizedSubject, $needle, 0, 'UTF-8') !== false;
     }
 
     private function fetchMessageHtml(string $token, string $messageId): ?string
@@ -222,7 +286,8 @@ class CodeController extends Controller
         if (!$nodes || $nodes->length === 0) return null;
 
         $text = trim($nodes->item(0)->textContent ?? '');
-        if ($text !== '' && preg_match('/\d{4,8}/', $text, $m)) {
+        // chỉ lấy code đúng 6 số; code 4 số (hoặc độ dài khác) bỏ qua, không hiển thị
+        if ($text !== '' && preg_match('/(?<!\d)\d{6}(?!\d)/', $text, $m)) {
             return $m[0];
         }
         return null;

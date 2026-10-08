@@ -24,7 +24,9 @@ class UpdateMidasbuyTokenRequest extends FormRequest
     {
         return [
             'image' => 'nullable|image|max:255',
-            'status' => "required|in:pending,success,cancelled",
+            // "delayed" phải có mặt, nếu không form sửa đơn sẽ báo lỗi 422 khi
+            // admin chọn "Đang hoãn (thiếu code token)".
+            'status' => "required|in:pending,delayed,success,cancelled",
             "code" => "nullable|string|max:255",
         ];
     }

@@ -100,6 +100,28 @@
                 </div>
             </div>
         </div>
+        <!-- Racing Master Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-gamepad fa-3x text-danger"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="card-title mb-0">Racing Master</h4>
+                            <p class="text-muted mb-0">Quản lý đơn hàng Racing Master</p>
+                        </div>
+                    </div>
+                    <p class="card-text">Quản lý các đơn hàng game Racing Master (SEA).</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('racing-master-order.index') }}" class="btn btn-danger">
+                            <i class="fas fa-list"></i> Xem danh sách Racing Master Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row mt-4">
