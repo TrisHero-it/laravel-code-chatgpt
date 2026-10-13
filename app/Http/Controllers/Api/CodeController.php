@@ -142,16 +142,26 @@ class CodeController extends Controller
 
             if ($createdAt < $cutoff) continue;
 
-            // Chỉ nhận mail "Mã xác minh. Hết hạn sau 15 phút." và bản dịch của nó.
-            // Xét SAU mốc 15 phút để log tiêu đề-chưa-khớp chỉ ghi mail mới, khỏi ồn.
-            if (!$this->isVerifySubject((string) $subject)) continue;
-
             $html = $this->fetchMessageHtml($tokenForItem, $messageId);
             if (!$html) continue;
 
             $verifyLink = $this->extractNetflixVerifyLink($html);
-            $code = $verifyLink ? null : $this->extractNetflixVerifyCode($html);
-            if (!$verifyLink && !$code) continue;
+
+            if ($verifyLink) {
+                // Mail có nút "Lấy mã" (truy cập hộ gia đình: travel/verify,
+                // update-primary-location). Nút đã đủ đặc trưng nên LUÔN hiển
+                // thị, KHÔNG áp bộ lọc tiêu đề 15 phút - tránh bỏ mất mail nút
+                // mà tiêu đề không nói "15 phút".
+                $code = null;
+            } else {
+                // Không có nút -> chỉ nhận mail "Mã xác minh. Hết hạn sau 15
+                // phút." (và bản dịch) kèm mã 6 số. Xét tiêu đề SAU mốc 15 phút
+                // để log tiêu đề-chưa-khớp chỉ ghi mail mới, khỏi ồn.
+                if (!$this->isVerifySubject((string) $subject)) continue;
+
+                $code = $this->extractNetflixVerifyCode($html);
+                if (!$code) continue;
+            }
 
             $items[] = [
                 'id' => $messageId,
@@ -264,8 +274,9 @@ class CodeController extends Controller
         libxml_clear_errors();
 
         $xpath = new DOMXPath($dom);
-        // travel/verify: mã truy cập tạm thời, update-primary-location: cập nhật hộ gia đình
-        $nodes = $xpath->query('//a[contains(@href,"netflix.com/account/travel/verify") or contains(@href,"netflix.com/account/update-primary-location")]');
+        // travel/verify: mã truy cập tạm thời. (update-primary-location đã bỏ
+        // theo yêu cầu - không hiển thị mail cập nhật hộ gia đình.)
+        $nodes = $xpath->query('//a[contains(@href,"netflix.com/account/travel/verify")]');
         if (!$nodes || $nodes->length === 0) return null;
 
         $node = $nodes->item(0);

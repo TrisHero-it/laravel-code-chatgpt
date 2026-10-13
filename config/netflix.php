@@ -44,7 +44,7 @@ return [
             'minuutin', 'minuuttia',                // fi
             'минут', 'минуты', 'минутах',           // ru
             'хвилин',                               // uk
-            'dakika',                               // tr
+            'dakika', 'dakka',                      // tr (dakka: viết tắt, gặp thực tế)
             'menit', 'minit',                       // id, ms
             'นาที',                                  // th
             '分', '分鐘', '分钟',                      // ja, zh-TW, zh-CN
