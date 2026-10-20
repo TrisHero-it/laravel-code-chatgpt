@@ -29,6 +29,7 @@ return [
         // biệt hoa thường). Gặp ngôn ngữ mới thì thêm vào đây.
         'exact' => [
             'Mã xác minh. Hết hạn sau 15 phút.',
+            'Verification code. Expires in 15 mins.',
             // Mail "Nhận mã" truy cập tạm thời (travel/verify). Thường có nút
             // nên đã được hiển thị sẵn, thêm ở đây cho trường hợp chỉ có mã.
             'Mã truy cập Netflix tạm thời của bạn',
@@ -39,7 +40,7 @@ return [
         // đích chỉ để không bỏ sót bản dịch chưa kịp thêm vào 'exact'.
         'minute_words' => [
             'phút',                                 // vi
-            'minute', 'minutes',                    // en, fr, de, ro, cs
+            'minute', 'minutes', 'mins',            // en, fr, de, ro, cs (mins: viết tắt, gặp thực tế)
             'minuto', 'minutos', 'minuti',          // es, pt, it, fil
             'minuut', 'minuten',                    // nl, de
             'minut', 'minuty', 'minutach',          // pl, cs, sv, da

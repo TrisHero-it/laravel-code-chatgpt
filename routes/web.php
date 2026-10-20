@@ -2,10 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
+// Đăng nhập trang quản trị chỉ bật trên server; local (APP_ENV=local) bỏ qua
+// cho tiện dev. Server PHẢI để APP_ENV khác "local" (vd production).
+$requireLogin = !app()->environment('local');
+$toolsAuth = $requireLogin ? ['auth.basic'] : [];
+$tokenCodesAuth = $requireLogin ? ['simple.auth'] : [];
+
 Route::get('/', [App\Http\Controllers\CodeMuakey\IndexController::class, 'index'])->name('index');
 Route::get('/tools/login', [App\Http\Controllers\CodeMuakey\LoginController::class, 'showLoginForm'])->name('tools.login');
 
-Route::prefix('/tools')->group(function () {
+Route::prefix('/tools')->middleware($toolsAuth)->group(function () {
     Route::get('/manager', function () {
         return view('code-muakey.tools.manager');
     })->name('manager-tools');
@@ -36,12 +42,14 @@ Route::prefix('/tools')->group(function () {
     Route::get("/netflix-export-form-add",[App\Http\Controllers\CodeMuakey\NetflixController::class, 'exportFormAdd'])->name('netflix.export-form-add');
 });
 
-Route::prefix('/tools')->group(function () {
+Route::prefix('/tools')->middleware($toolsAuth)->group(function () {
     Route::resources([
         'netflix' => App\Http\Controllers\CodeMuakey\NetflixController::class,
     ]);
 });
 
-Route::resources([
-    'token-codes' => App\Http\Controllers\CodeMuakey\TokenCodeController::class,
-]);
+Route::middleware($tokenCodesAuth)->group(function () {
+    Route::resources([
+        'token-codes' => App\Http\Controllers\CodeMuakey\TokenCodeController::class,
+    ]);
+});
