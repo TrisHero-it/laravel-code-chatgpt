@@ -111,6 +111,29 @@
     </div>
 
     <div class="row mt-4" style="display: flex;">
+        <!-- Inbound Mail Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-envelope fa-3x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="card-title mb-0">Hộp thư Netflix</h4>
+                            <p class="text-muted mb-0">netflix@lumekza.io.vn</p>
+                        </div>
+                    </div>
+                    <p class="card-text">Đọc mail gửi tới netflix@lumekza.io.vn.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('inbound-mail.index') }}" class="btn btn-info">
+                            <i class="fas fa-inbox"></i> Mở hộp thư
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- <div class="col-md-5 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">

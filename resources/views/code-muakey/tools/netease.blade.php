@@ -122,6 +122,28 @@
                 </div>
             </div>
         </div>
+        <!-- Dunk City Dynasty Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-basketball-ball fa-3x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="card-title mb-0">Dunk City Dynasty</h4>
+                            <p class="text-muted mb-0">Quản lý đơn hàng Dunk City Dynasty</p>
+                        </div>
+                    </div>
+                    <p class="card-text">Quản lý các đơn hàng game Dunk City Dynasty.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('dunk-city-dynasty-order.index') }}" class="btn btn-info">
+                            <i class="fas fa-list"></i> Xem danh sách Dunk City Dynasty Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row mt-4">

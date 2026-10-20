@@ -21,12 +21,12 @@
         <div class="card-body">
             <form method="GET" action="{{ route('racing-master-order.index') }}" class="d-flex gap-2 align-items-end">
                 <div class="flex-grow-1">
-                    <label for="search" class="form-label">Tìm kiếm theo Order ID / UID</label>
+                    <label for="search" class="form-label">Tìm kiếm theo mã đơn hàng / UID</label>
                     <input type="text"
                         class="form-control"
                         id="search"
                         name="search"
-                        placeholder="Nhập Order ID hoặc UID để tìm kiếm..."
+                        placeholder="Nhập Order ID, Sales Agent ID hoặc UID để tìm kiếm..."
                         value="{{ request()->query('search') }}">
                 </div>
                 <div>

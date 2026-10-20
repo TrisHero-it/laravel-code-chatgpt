@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\CodeMuakey\BloodStrikeController;
+use App\Http\Controllers\CodeMuakey\DunkCityDynastyController;
 use App\Http\Controllers\CodeMuakey\IdentityController;
 use App\Http\Controllers\CodeMuakey\MarvelRivalsController;
 use App\Http\Controllers\CodeMuakey\RacingMasterController;
@@ -95,8 +96,11 @@ class ImportDoitacOrders extends Command
         $server = $this->extractServer($fields, $uid);
 
         // Tên game phải xét trước tên pack: catalog Racing Master có "Weekly Card
-        // Racing Master ..." sẽ lọt nhầm vào nhánh MidasBuy Japan nếu để sau.
-        if (preg_match('/racing\s*master/i', $name)) {
+        // Racing Master ..." sẽ lọt nhầm vào nhánh MidasBuy Japan nếu để sau,
+        // và gói "60 Tokens ... Dunk City Dynasty" sẽ lọt vào nhánh MidasBuy Token.
+        if (preg_match('/dunk\s*city/i', $name)) {
+            $this->importDunkCityDynasty((int) $partnerId, $orderItemId, $name, $uid, $fields);
+        } elseif (preg_match('/racing\s*master/i', $name)) {
             $this->importRacingMaster((int) $partnerId, $orderItemId, $name, $uid);
         } elseif (preg_match('/weekly\s*card/i', $name)) {
             $this->importMidasbuyJapan((int) $partnerId, $orderItemId, $name, $uid);
@@ -348,6 +352,60 @@ class ImportDoitacOrders extends Command
         $this->markDoitacStatus($partnerId, 'pending');
     }
 
+    protected function importDunkCityDynasty(int $partnerId, $orderItemId, string $name, ?string $uid, array $fields): void
+    {
+        if (WwmOrder::where('sales_agent_id', $partnerId)->exists()) {
+            return;
+        }
+
+        $productId = $this->matchDunkCityDynastyProductId($name);
+
+        if (!$productId) {
+            Log::warning('doitac import: không tìm thấy product_id Dunk City Dynasty khớp với tên sản phẩm', ['id' => $partnerId, 'name' => $name]);
+            return;
+        }
+
+        $serverName = $this->extractDunkCityServer($fields);
+
+        WwmOrder::create([
+            'order_id' => $orderItemId,
+            'uid' => $uid,
+            'server' => $serverName,
+            'product_id' => $productId,
+            'category' => 'dunk city dynasty',
+            'sales_agent_id' => $partnerId,
+            'status' => 'pending',
+        ]);
+
+        $this->info("Đã thêm Dunk City Dynasty order (partner #{$partnerId})");
+        $this->markDoitacStatus($partnerId, 'pending');
+    }
+
+    /**
+     * Đơn Dunk City có thêm field nickname (vd "VN•Harvy") đứng trước field server nên
+     * extractServer() sẽ lấy nhầm; server lại viết liền không dấu cách ("tenementcourt").
+     * Vì vậy dò mọi field, bỏ dấu cách/ký tự lạ rồi so với 4 tên server NetEase.
+     * Không khớp thì để trống cho bot tự dò server theo UID.
+     */
+    protected function extractDunkCityServer(array $fields): ?string
+    {
+        $squash = fn (string $value) => preg_replace('/[^a-z]/', '', strtolower($value));
+
+        foreach ($fields as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+
+            foreach (DunkCityDynastyController::SERVERS as $candidate) {
+                if (str_contains($squash($value), $squash($candidate))) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Cập nhật trạng thái đơn hàng bên đối tác doitac.top sau khi import.
      * status hợp lệ: cancel (huỷ), processed (thành công), pending (Đã nhận, đang làm).
@@ -511,6 +569,60 @@ class ImportDoitacOrders extends Command
         }
 
         return null;
+    }
+
+    /**
+     * Catalog Dunk City Dynasty có nhiều tên là tiền tố của nhau ("Premium Pass" vs
+     * "Extra Premium Pass", "60 Tokens" vs "60 Tokens + 60 Bonus Diamonds"). Thứ tự ưu tiên:
+     * khớp tuyệt đối -> tên catalog DÀI nhất nằm trong tên đơn -> tên catalog chứa tên đơn.
+     * So khớp trên "lõi" tên gói (xem dunkCityPackKey) vì doitac viết khác catalog về dấu câu
+     * và hậu tố (vd "980 Tokens 130 free - Dunk City Dynasty Chỉ Cần ID" vs
+     * "980 Tokens, 130 free. Dunk City Dynasty Top Up Chỉ Cần ID").
+     */
+    protected function matchDunkCityDynastyProductId(string $name): ?string
+    {
+        $clean = $this->dunkCityPackKey($name);
+
+        if ($clean === '') {
+            return null;
+        }
+
+        $within = null;
+        $withinLength = -1;
+        $containing = null;
+
+        foreach ((new DunkCityDynastyController())->getProducts() as $product) {
+            $normalized = $this->dunkCityPackKey($product['goodsinfo']);
+
+            if ($normalized === $clean) {
+                return $product['goodsid'];
+            }
+
+            // Bao bằng khoảng trắng để chỉ khớp nguyên từ ("60 tokens" không ăn "960 tokens").
+            if (str_contains(" {$clean} ", " {$normalized} ") && strlen($normalized) > $withinLength) {
+                $within = $product['goodsid'];
+                $withinLength = strlen($normalized);
+            } elseif ($containing === null && str_contains(" {$normalized} ", " {$clean} ")) {
+                $containing = $product['goodsid'];
+            }
+        }
+
+        return $within ?? $containing;
+    }
+
+    /**
+     * Rút tên gói Dunk City Dynasty về dạng so khớp được: bỏ tên game, "Top Up", "Chỉ Cần ID",
+     * hậu tố "x N"/"ID", dấu phẩy hàng nghìn ("1,980" -> "1980") và mọi dấu câu còn lại.
+     */
+    protected function dunkCityPackKey(string $name): string
+    {
+        $key = mb_strtolower($this->normalizeProductName($name));
+        $key = preg_replace('/dunk\s*city(\s*dynasty)?|top\s*up|chỉ\s*cần\s*id/u', ' ', $key);
+        $key = preg_replace('/(?<=\d),(?=\d{3})/', '', $key);
+        $key = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $key);
+        $key = preg_replace('/\s+id$/', '', trim($key));
+
+        return trim($key);
     }
 
     /**

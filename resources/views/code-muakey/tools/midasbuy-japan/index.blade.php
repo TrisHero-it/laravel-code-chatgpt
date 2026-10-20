@@ -35,7 +35,7 @@
                         class="form-control"
                         id="search"
                         name="search"
-                        placeholder="Nhập Order ID, UID"
+                        placeholder="Nhập Order ID, Sales Agent ID hoặc UID"
                         value="">
                 </div>
                 <div>

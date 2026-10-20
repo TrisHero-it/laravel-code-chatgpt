@@ -12,6 +12,8 @@ Route::get("/search-netflix-account", [App\Http\Controllers\Api\CodeController::
 
 Route::get("/midasbuy-token-order", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'index']);
 Route::get("/add-midasbuy-token-order", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'store']);
+// Chốt đơn: status + code + ảnh chứng minh (multipart POST)
+Route::post("/midasbuy-token-order/{id}/complete", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'complete']);
 // Hoãn cả cụm đơn cùng mức token khi kho hết code mức đó (mặc định 30 phút)
 Route::get("/midasbuy-token-order/delay-token", [App\Http\Controllers\Api\MidasbuyTokenController::class, 'delayToken']);
 // Hoãn một đơn cụ thể (mặc định 30 phút) để tool làm các đơn khác trước

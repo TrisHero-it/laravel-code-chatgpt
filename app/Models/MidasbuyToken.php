@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SearchesOrders;
 use Illuminate\Database\Eloquent\Model;
 
 class MidasbuyToken extends Model
 {
+    use SearchesOrders;
+
     /** Đơn chưa nạp, tool sẽ lấy đơn này */
     public const STATUS_PENDING = 'pending';
     /** Đơn bị hoãn vì thiếu code token, tới delayed_until thì tự về pending */
@@ -44,6 +47,11 @@ class MidasbuyToken extends Model
                 );
             }
         });
+    }
+
+    protected function orderSearchColumns(): array
+    {
+        return ['order_id', 'sale_agent_id', 'uid', 'code'];
     }
 
     /**

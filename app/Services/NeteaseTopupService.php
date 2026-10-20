@@ -29,6 +29,7 @@ class NeteaseTopupService
         'blood strike'    => 'bloodstrike',
         'marvel rivals'   => 'marvelrivals',
         'racing master'   => 'racingmastersea',
+        'dunk city dynasty' => 'dunkcitydynasty',
     ];
 
     /** Phiên bản client mà trang topup tự khai báo trong mọi request. */

@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    // Hộp thư inbound-mail (Cloudflare Email Routing) - xem InboundMailService
+    'inbound_mail' => [
+        'base_url' => env('INBOUND_MAIL_URL', 'https://inbound-mail.nghianb-it.workers.dev'),
+        'token' => env('INBOUND_MAIL_TOKEN'),
+    ],
+
     'netease' => [
         'base_url' => env('NETEASE_API_URL', 'https://pay.neteasegames.com/gameclub'),
         'timeout' => (int) env('NETEASE_API_TIMEOUT', 20),

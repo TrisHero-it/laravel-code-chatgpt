@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Netflix;
+use App\Services\InboundMailService;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
@@ -29,6 +30,11 @@ class CodeController extends Controller
         // email trong DB có thể dư khoảng trắng / khác hoa thường (nhập từ Excel)
         $account = Netflix::query()->whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
 
+        // chỉ lấy mail trong vòng 15 phút (giờ VN)
+        $now = new DateTime('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+        $cutoff = clone $now;
+        $cutoff->sub(new DateInterval('PT15M'));
+
         if ($account != null) {
             // json_encode trong getToken đã tự escape, không escape thêm ở đây
             $tokenResp = $this->getToken([
@@ -39,98 +45,29 @@ class CodeController extends Controller
             if (!$tokenValue) {
                 return response()->json(['success' => false, 'message' => 'Không đăng nhập được hộp thư (sai mật khẩu hoặc email không thuộc mail.tm)'], 401);
             }
-            $tokens = [$tokenValue];
+            $messages = $this->listMailTmMessages($tokenValue);
         } else {
-            // fallback: dùng pool token mặc định
-            $tokens = [
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY3Mzc0MDksInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibWluaHRyaTIwNEBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjlkZTE1OWQ3OTgyNjA0ZGRmMGIxMjAzIiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZGUxNTlkNzk4MjYwNGRkZjBiMTIwMyJdfX0.9iJMgTADZfCItCCmtwhyRXs5ouCVGXT8XLXvTYa8I0y6ND6AUO5GXKPTnjl-RYfuC-B7tbUPzSWwMZUaFdjnsQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4MzEyNTEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmh1bmd0YW5iYTIzMTVAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTZmYWUyMDNlNmFkOTQ0ZjBkNDg1OSIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU2ZmFlMjAzZTZhZDk0NGYwZDQ4NTkiXX19.2jveP38qRzz2jXSYs29qy8_-WIMu66h3AVP3llTLuYCqU4U1-Ne5LbtULfVljHnUn7ISHSs_bVrYCUzOEN0jkw",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDI1OTEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoidnVzaXh1a2ExMjMzQGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3MDQ3MDkwZWQzZTFiNmMwY2UzZGEiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzA0NzA5MGVkM2UxYjZjMGNlM2RhIl19fQ.P-ylAqgQ6SzUmN3eM1IphDBe12uIQUx7NrFpGBPLopUhV1MMmQBts5WJrQKidvbEeKHb2ukOwVWeLFQefhaoGw",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDI2MjIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoic3VhYm5jaDEzNDExM0BkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzIwNTg2MWVmMzc3ODA2MGRjZTljIiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTcyMDU4NjFlZjM3NzgwNjBkY2U5YyJdfX0.n3E9aibB2pif-FySoCrKZFTPiSP2fVCgxn9d6ycYH9AON9aWW0FPRmqbmO4eEBc27u6Qe2dwSZdD_J9xotvjQA",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDU5OTUsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibWluaHhpbmhkZXAxMjMxQGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3MjhlNmM1MjNlOWNhZDIwZDhhYmUiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzI4ZTZjNTIzZTljYWQyMGQ4YWJlIl19fQ.z5dvLykmNKn7kCuLo9W7IFHY-Yz0A3UvPFu2sT6bkz8izaTppoCxmrijJQvl5GjcfBfpNqoYTNjvLiz0XC4nbQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYwMzAsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoidHJpZ2F5bG8xMjNAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTcyYmQyMjJmYzM1NGEyMzA5M2Y3YyIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU3MmJkMjIyZmMzNTRhMjMwOTNmN2MiXX19.YcTGrFIAHE_zUmMiuqROYg_vjJK4Nwj-2UH5QYnQpVKOaaLcaMsnZ-Fqqg2OXOBM7jBfF58fdapI6ULK-NT5Mw",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYwNjIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiZW10cmlyYXRnYXkzMTkyMUBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzMyYjNiNWIxNTg5YWQ2MDIzMWY5IiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTczMmIzYjViMTU4OWFkNjAyMzFmOSJdfX0.HeIVGoENE_u9y_Vd6F4joJZWyFXpk7m2zJgrF81IuJrCWVXohKLnQjs_7IsxTaCAdfMgtvt6n8E2VnkOlA9z7w",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYwOTEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiZW10cmlyYXRnYXkyMjEwQGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3M2E0ODExOGRmMTZhZjkwZDg0YTAiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzNhNDgxMThkZjE2YWY5MGQ4NGEwIl19fQ.EXi3Bw6JRmVNJsvKiK5-e2TTyxAFHLOhOKzZMIpidt_0KXA0wfTZGfOT224zgPIjwFodhdYZEzoKQVzZOiEZig",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYxMjAsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiZ2F5dG9xdWExMjMxQGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3NWQ3YzhlYmM0MWU4MmIwNGU0MzIiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzVkN2M4ZWJjNDFlODJiMDRlNDMyIl19fQ.nWxDWU6iqocXOqiYhkw6ri2L12xAqU06bB1xedafgFoGrE5R2UBEI_EdHYPdNlKaa_8ePgHluSDNlyKvd2brQQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYxNDYsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoidGhhdHZ1aXN1b25nMTI3MkBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzVkYTMxZjM1NWI4MTdjMGQ1MmI2IiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTc1ZGEzMWYzNTViODE3YzBkNTJiNiJdfX0.I26gIDUR15Z64pMrECJEVI7S6zeoHs7MrEQPhuisFf-0bTPaNGKY7O0jYc0ZBH5NO-tvY4nMtPTTlMn3_FEdQQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYxNzQsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiY2hpbWRhaWRlbW5hY2sxMjM1QGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3NWRjZDI4OGE0YjdkZWUwYzgwNTAiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzVkY2QyODhhNGI3ZGVlMGM4MDUwIl19fQ.zo9TTqxzkV6cWhbGcxBw1Q74g1Gc4pzN17zWIc4DvMvOuM_d5-j7OXkxzUxXZGYDfrriLroJ0Cgl3HnSR2I_Ow",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYxOTUsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2l0aG8xMjNAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTc1ZGZiNGY4M2E3MjgzMzAxMDk2MiIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU3NWRmYjRmODNhNzI4MzMwMTA5NjIiXX19.DR4oLMW7tIekgzsi6WOt9yEuU59dzN51d69sGyAw4X-ioAb4aR51xoCbzjpom9A6VJ-KhRoPlPhPRMiTGtsslQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYyMTUsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibWFkaWJ1MjM2MUBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzVlMmYxMThkZjE2YWY5MGQ4OGE5IiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTc1ZTJmMTE4ZGYxNmFmOTBkODhhOSJdfX0.r4WK4ym63IgiHfutzIsfzfAyUnr0XtbCe4AMp7MwLRikUkLaib2RoVGdn8eeAQ4aYNb8iEISyLGAnlx-UAWDMg",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYyNDcsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiZ29rdWRhMTI1QGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU3NWU3ODhhMTg0NTZiYmYwMTE0ZjMiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllNzVlNzg4YTE4NDU2YmJmMDExNGYzIl19fQ.Cv4e2CxdM-ww8RLmLgKGYlQ0EK4blSPdasW8ypTKaLoUi6IH_reRddLZvTxZkxRpT99pnpXchSFr8SMqArtQiQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYyODEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoidG9pbGFtYTEyNUBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzVlOTY4NTZmYjAyNmJkMGNjYTkyIiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTc1ZTk2ODU2ZmIwMjZiZDBjY2E5MiJdfX0.hlvTpNafz0nFG8XWBJL0qlqdQ4SzBY-HSd3eMmvLhnKXJi4f026xlR9G2m_tW-vIgivS2NTj85M6mgyZfJ1l3g",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYzMDEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2luZ29haWN1MTJAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTc1ZjI0NGZhYWZkYjBmNjA0ODc2YiIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU3NWYyNDRmYWFmZGIwZjYwNDg3NmIiXX19.DybZJcxR0F96kEew3X7tUPKWZ6VMUj0cSq9IQbj2DG0sgcfm05fwfWpNQeQmRfj7JGAXogPSR8s-omshRcxPLQ",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYzMzAsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoiY3V0YXkxMjNAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTc1ZjNmMzE2ZWM0YTkyODA2ZTJkMiIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU3NWYzZjMxNmVjNGE5MjgwNmUyZDIiXX19.ALz4flmpbduj50DL2li4NR9r_Am8HoPM4QMh2YYdN06s6E4JojWJMqZuq5-TWxIkkO8Wib-7T0I1w2l6ZwRAug",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYzNDksInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2ljb3Z1MTJAZGVsdGFqb2huc29ucy5jb20iLCJpZCI6IjY5ZTc1ZjVkMmExN2Q1M2Q2ZTA5YThkNyIsIm1lcmN1cmUiOnsic3Vic2NyaWJlIjpbIi9hY2NvdW50cy82OWU3NWY1ZDJhMTdkNTNkNmUwOWE4ZDciXX19.Zsgajg5utJoWI7kOY-BxmiGplX-zlwB43FoXY706CEGFc7PW4ED--JmMbbSjfo6agn4PWhpJMaYnl_mOybbHqg",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDYzNjQsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2l0YXljaGltMUBkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllNzVmN2NmNGMxOGIxOGQ3MDhiOWQ3IiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTc1ZjdjZjRjMThiMThkNzA4YjlkNyJdfX0.uN68gX7sShxi--J6AMAMvMlVByf08hPKBdgjVwZPjcJMs_XX_8jK0TFLc-Nw4zqvTn0JwxROQCluJGT2u86pDw",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDY0NDAsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibHVhY2F5MTI1M0BkZWx0YWpvaG5zb25zLmNvbSIsImlkIjoiNjllN2FjNWViMzI3NDUzN2VhMGU5YjM2IiwibWVyY3VyZSI6eyJzdWJzY3JpYmUiOlsiL2FjY291bnRzLzY5ZTdhYzVlYjMyNzQ1MzdlYTBlOWIzNiJdfX0.u1jAxV3g53LKVbE1No9yTj5Nz4O5U3nczCIz_tn20KHvHjADVPD6A8HqoiBJHZ2kaKMpG6bUMc2gw6k3RvzEiw",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDY0NTcsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2lwaG8xMjM0QGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU4MzlkMzhiMDkzNjBiYWMwMGRmNWIiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllODM5ZDM4YjA5MzYwYmFjMDBkZjViIl19fQ.dAd_esPqgxadGw0z-MJCmOEi_iI2hkf_lvILZ0C3y8_KbLLrgo2FgzzT5mUohlq_OVCqm8vF3RQAxHyGZGdONA",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NzY4NDY0NzEsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJhZGRyZXNzIjoibmd1b2luaGVuMTIzQGRlbHRham9obnNvbnMuY29tIiwiaWQiOiI2OWU4MzlmNzMwZWVjMzQwZGUwZjczODQiLCJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyIvYWNjb3VudHMvNjllODM5ZjczMGVlYzM0MGRlMGY3Mzg0Il19fQ.YxJSfbiwAef9dXf7joJsQ9xx37G0Ge8Mv0LLDNU9MwOnwQjZd2lmz80wMiOcZNoYUoNu1wQRcfywk8Nk4i6ftg",
-            ];
+            // Không có trong danh sách tài khoản mail.tm -> lấy từ hộp inbound-mail
+            $messages = $this->listInboundMessages($email, $cutoff);
         }
 
-        $multiHandle = curl_multi_init();
-        $curlHandles = [];
-        $curlHandleTokens = [];
-
-        $url = self::API_URL . "messages";
-        foreach ($tokens as $t) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {$t}"]);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_multi_add_handle($multiHandle, $ch);
-            $curlHandles[] = $ch;
-            $curlHandleTokens[(int)$ch] = $t;
-        }
-
-        do {
-            $status = curl_multi_exec($multiHandle, $active);
-        } while ($status === CURLM_CALL_MULTI_PERFORM || $active);
-
-        $merged = [];
-        foreach ($curlHandles as $ch) {
-            $body = curl_multi_getcontent($ch);
-            $t = $curlHandleTokens[(int)$ch] ?? null;
-            curl_multi_remove_handle($multiHandle, $ch);
-            curl_close($ch);
-
-            $decoded = json_decode($body ?: '', true);
-            if (!is_array($decoded)) continue;
-            $members = $decoded['hydra:member'] ?? null;
-            if (!is_array($members)) continue;
-            foreach ($members as $member) {
-                if (!is_array($member)) continue;
-                $member['_token'] = $t;
-                $merged[] = $member;
-            }
-        }
-        curl_multi_close($multiHandle);
-
-        usort($merged, function ($a, $b) {
+        usort($messages, function ($a, $b) {
             return strtotime($b['createdAt'] ?? '') - strtotime($a['createdAt'] ?? '');
         });
 
-        // chỉ lấy mail trong vòng 15 phút (giờ VN)
-        $now = new DateTime('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
-        $cutoff = clone $now;
-        $cutoff->sub(new DateInterval('PT15M'));
-
         $items = [];
-        foreach ($merged as $item) {
-            $fromName = $item['from']['name'] ?? null;
-            $toAddr = $item['to'][0]['address'] ?? null;
-            $tokenForItem = $item['_token'] ?? null;
-            $messageId = $item['@id'] ?? null;
-            $createdAtRaw = $item['createdAt'] ?? null;
+        foreach ($messages as $item) {
+            $fromName = $item['fromName'];
+            $fromAddr = $item['fromAddr'];
+            $toAddr = $item['toAddr'];
+            $messageId = $item['id'];
+            $createdAtRaw = $item['createdAt'];
+            $subject = $item['subject'];
 
-            $subject = $item['subject'] ?? '';
-
-            $fromAddr = $item['from']['address'] ?? '';
-            $isNetflix = mb_stripos((string) $fromName, 'netflix', 0, 'UTF-8') !== false
-                || mb_stripos((string) $fromAddr, 'netflix', 0, 'UTF-8') !== false;
+            $isNetflix = mb_stripos($fromName, 'netflix', 0, 'UTF-8') !== false
+                || mb_stripos($fromAddr, 'netflix', 0, 'UTF-8') !== false;
             if (!($isNetflix && $toAddr && mb_strtolower(trim($toAddr), 'UTF-8') === $email)) continue;
-            if (!$tokenForItem || !$messageId) continue;
+            if (!$messageId) continue;
             if (!$createdAtRaw) continue;
 
             try {
@@ -142,7 +79,7 @@ class CodeController extends Controller
 
             if ($createdAt < $cutoff) continue;
 
-            $html = $this->fetchMessageHtml($tokenForItem, $messageId);
+            $html = ($item['fetchHtml'])();
             if (!$html) continue;
 
             $verifyLink = $this->extractNetflixVerifyLink($html);
@@ -242,9 +179,85 @@ class CodeController extends Controller
         return $needle !== '' && mb_strpos($normalizedSubject, $needle, 0, 'UTF-8') !== false;
     }
 
-    private function fetchMessageHtml(string $token, string $messageId): ?string
+    /**
+     * Mail của một tài khoản mail.tm, đưa về cùng dạng với listInboundMessages().
+     */
+    private function listMailTmMessages(string $token): array
     {
-        $url = "https://api.mail.tm" . $messageId;
+        $decoded = $this->getJson(self::API_URL . "messages", $token);
+        $members = $decoded['hydra:member'] ?? null;
+        if (!is_array($members)) return [];
+
+        $messages = [];
+        foreach ($members as $member) {
+            if (!is_array($member)) continue;
+            $messageId = $member['@id'] ?? null;
+
+            $messages[] = [
+                'id' => $messageId,
+                'subject' => (string) ($member['subject'] ?? ''),
+                'createdAt' => $member['createdAt'] ?? null,
+                'fromName' => (string) ($member['from']['name'] ?? ''),
+                'fromAddr' => (string) ($member['from']['address'] ?? ''),
+                'toAddr' => $member['to'][0]['address'] ?? null,
+                'fetchHtml' => fn () => $messageId
+                    ? $this->extractHtml($this->getJson("https://api.mail.tm" . $messageId, $token))
+                    : null,
+            ];
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Mail đổ về hộp inbound-mail (Cloudflare Email Routing) - dùng cho email
+     * không có trong danh sách tài khoản mail.tm.
+     *
+     * Bộ lọc "to" của API chỉ so với envelope_to (luôn là hộp chung), nên phải
+     * tự lọc theo người nhận thật - xem InboundMailService::recipientOf().
+     * Mail mới nhất trả về trước nên lật trang tới khi qua mốc $cutoff.
+     */
+    private function listInboundMessages(string $email, DateTime $cutoff): array
+    {
+        $inbound = app(InboundMailService::class);
+
+        $messages = [];
+        $before = null;
+        for ($page = 0; $page < 5; $page++) {
+            $result = $inbound->list(null, $before, 100);
+            $oldest = null;
+
+            foreach ($result['items'] as $mail) {
+                if (!is_array($mail)) continue;
+                $messageId = $mail['id'] ?? null;
+                $createdAt = $mail['received_at'] ?? $mail['sent_at'] ?? null;
+                $oldest = $createdAt ?? $oldest;
+
+                if (!$inbound->sameAddress($inbound->recipientOf($mail), $email)) continue;
+
+                $messages[] = [
+                    'id' => $messageId,
+                    'subject' => (string) ($mail['subject'] ?? ''),
+                    'createdAt' => $createdAt,
+                    'fromName' => (string) ($mail['from_name'] ?? ''),
+                    'fromAddr' => (string) ($mail['from_address'] ?? ''),
+                    // đã khớp người nhận ở trên (có bỏ dấu chấm/+tag của Gmail)
+                    'toAddr' => $email,
+                    'fetchHtml' => fn () => $messageId
+                        ? $this->extractHtml($inbound->find($messageId))
+                        : null,
+                ];
+            }
+
+            $before = $result['next_before'];
+            if (!$before || !$oldest || strtotime($oldest) < $cutoff->getTimestamp()) break;
+        }
+
+        return $messages;
+    }
+
+    private function getJson(string $url, string $token): ?array
+    {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -257,7 +270,12 @@ class CodeController extends Controller
 
         if (!$body) return null;
         $decoded = json_decode($body, true);
-        if (!is_array($decoded)) return null;
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function extractHtml(?array $decoded): ?string
+    {
+        if (!$decoded) return null;
 
         $html = $decoded['html'] ?? null;
         if (is_array($html)) $html = $html[0] ?? null;
@@ -274,9 +292,13 @@ class CodeController extends Controller
         libxml_clear_errors();
 
         $xpath = new DOMXPath($dom);
-        // travel/verify: mã truy cập tạm thời. (update-primary-location đã bỏ
-        // theo yêu cầu - không hiển thị mail cập nhật hộ gia đình.)
-        $nodes = $xpath->query('//a[contains(@href,"netflix.com/account/travel/verify")]');
+        // travel/verify: "Mã truy cập Netflix tạm thời của bạn" (nút "Nhận mã").
+        // update-primary-location: "Lưu ý quan trọng: Cách cập nhật Hộ gia đình
+        // Netflix" (nút "Đúng, đây là tôi").
+        $nodes = $xpath->query(
+            '//a[contains(@href,"netflix.com/account/travel/verify")'
+            . ' or contains(@href,"netflix.com/account/update-primary-location")]'
+        );
         if (!$nodes || $nodes->length === 0) return null;
 
         $node = $nodes->item(0);

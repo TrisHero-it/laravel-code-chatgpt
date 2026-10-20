@@ -16,29 +16,25 @@
     <!-- Form tìm kiếm -->
     <div class="card mt-3 mb-3">
         <div class="card-body">
-            <form method="GET" action="?" class="d-flex gap-2 align-items-end">
-                <input type="hidden" name="act" value="wwm-orders">
-                <?php if (isset($_GET['category']) && $_GET['category'] !== ''): ?>
-                    <input type="hidden" name="category" value="<?php echo htmlspecialchars($_GET['category']) ?>">
-                <?php endif; ?>
+            <form method="GET" action="{{ route('wwm-order.index') }}" class="d-flex gap-2 align-items-end">
                 <div class="flex-grow-1">
-                    <label for="search_order_id" class="form-label">Tìm kiếm theo Order ID</label>
+                    <label for="search" class="form-label">Tìm kiếm theo mã đơn hàng / UID</label>
                     <input type="text"
                         class="form-control"
-                        id="search_order_id"
-                        name="search_order_id"
-                        placeholder="Nhập Order ID để tìm kiếm..."
-                        value="<?php echo isset($_GET['search_order_id']) ? htmlspecialchars($_GET['search_order_id']) : '' ?>">
+                        id="search"
+                        name="search"
+                        placeholder="Nhập Order ID, Sales Agent ID hoặc UID để tìm kiếm..."
+                        value="{{ request()->query('search') }}">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i> Tìm kiếm
                     </button>
-                    <?php if (isset($_GET['search_order_id']) && $_GET['search_order_id'] !== ''): ?>
-                        <a href="?act=wwm-orders<?php echo isset($_GET['category']) && $_GET['category'] !== '' ? '&category=' . urlencode($_GET['category']) : '' ?>" class="btn btn-secondary">
+                    @if (request()->query('search'))
+                        <a href="{{ route('wwm-order.index') }}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Xóa
                         </a>
-                    <?php endif; ?>
+                    @endif
                 </div>
             </form>
         </div>

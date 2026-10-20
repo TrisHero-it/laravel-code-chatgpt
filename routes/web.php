@@ -21,6 +21,7 @@ Route::prefix('/tools')->group(function () {
         'blood-strike-order' => App\Http\Controllers\CodeMuakey\BloodStrikeController::class,
         'marvel-rivals-order' => App\Http\Controllers\CodeMuakey\MarvelRivalsController::class,
         'racing-master-order' => App\Http\Controllers\CodeMuakey\RacingMasterController::class,
+        'dunk-city-dynasty-order' => App\Http\Controllers\CodeMuakey\DunkCityDynastyController::class,
         'midasbuy-token' => App\Http\Controllers\CodeMuakey\MidasbuyTokenController::class,
     ]);
 
@@ -28,7 +29,11 @@ Route::prefix('/tools')->group(function () {
     Route::post("/netease/verify-uid", [App\Http\Controllers\CodeMuakey\NeteaseTopupController::class, "verifyUid"])->name("netease.verify-uid");
     Route::get("/netease/topup/{order}", [App\Http\Controllers\CodeMuakey\NeteaseTopupController::class, "topupLink"])->name("netease.topup");
 
-    Route::get("/netflix-export-form-add", [App\Http\Controllers\CodeMuakey\NetflixController::class, 'exportFormAdd'])->name('netflix.export-form-add');
+    // Đọc tạm hộp thư netflix@lumekza.io.vn (API inbound-mail)
+    Route::get("/inbound-mail", [App\Http\Controllers\CodeMuakey\InboundMailController::class, 'index'])->name('inbound-mail.index');
+    Route::get("/inbound-mail/{id}", [App\Http\Controllers\CodeMuakey\InboundMailController::class, 'show'])->name('inbound-mail.show');
+
+    Route::get("/netflix-export-form-add",[App\Http\Controllers\CodeMuakey\NetflixController::class, 'exportFormAdd'])->name('netflix.export-form-add');
 });
 
 Route::prefix('/tools')->group(function () {

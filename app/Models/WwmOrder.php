@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SearchesOrders;
 use Illuminate\Database\Eloquent\Model;
 
 class WwmOrder extends Model
 {
+    use SearchesOrders;
+
     protected $table = 'wwm_orders';
 
     protected $fillable = [
@@ -18,4 +21,9 @@ class WwmOrder extends Model
         'category',
         'server',
     ];
+
+    protected function orderSearchColumns(): array
+    {
+        return ['order_id', 'sales_agent_id', 'uid'];
+    }
 }

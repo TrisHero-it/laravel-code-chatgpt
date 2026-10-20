@@ -29,6 +29,9 @@ return [
         // biệt hoa thường). Gặp ngôn ngữ mới thì thêm vào đây.
         'exact' => [
             'Mã xác minh. Hết hạn sau 15 phút.',
+            // Mail "Nhận mã" truy cập tạm thời (travel/verify). Thường có nút
+            // nên đã được hiển thị sẵn, thêm ở đây cho trường hợp chỉ có mã.
+            'Mã truy cập Netflix tạm thời của bạn',
         ],
 
         // Từ nghĩa là "phút" để dựng luật không phụ thuộc ngôn ngữ. Đây là từ

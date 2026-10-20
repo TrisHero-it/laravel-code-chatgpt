@@ -18,12 +18,7 @@ class RacingMasterController extends Controller
     {
         $query = WwmOrder::query()->where('category', $this->category);
 
-        if ($search = request()->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_id', 'like', "%{$search}%")
-                    ->orWhere('uid', 'like', "%{$search}%");
-            });
-        }
+        $query->searchOrder(request()->query('search'));
 
         $orders = $query
             ->orderByDesc('id')

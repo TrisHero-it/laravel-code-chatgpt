@@ -34,7 +34,7 @@
                         class="form-control"
                         id="search"
                         name="search"
-                        placeholder="Nhập Order ID, UID, Code..."
+                        placeholder="Nhập Order ID, Sale Agent ID, UID, Code..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
                 </div>
                 <div>
