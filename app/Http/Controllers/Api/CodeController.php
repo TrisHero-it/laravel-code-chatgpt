@@ -220,6 +220,7 @@ class CodeController extends Controller
     private function listInboundMessages(string $email, DateTime $cutoff): array
     {
         $inbound = app(InboundMailService::class);
+        $emailDomain = substr(strrchr($email, '@'), 1);
 
         $messages = [];
         $before = null;
@@ -233,7 +234,13 @@ class CodeController extends Controller
                 $createdAt = $mail['received_at'] ?? $mail['sent_at'] ?? null;
                 $oldest = $createdAt ?? $oldest;
 
-                if (!$inbound->sameAddress($inbound->recipientOf($mail), $email)) continue;
+                $direct = $inbound->sameAddress($inbound->recipientOf($mail), $email);
+                // Mail Cloudflare chuyển tiếp từ đúng domain của $email: danh
+                // sách không có người nhận thật, để fetchHtml mở mail rồi so
+                // header to. search() chỉ gọi fetchHtml cho mail Netflix còn
+                // trong mốc thời gian nên không phải mở cả trăm mail.
+                $viaDomain = !$direct && $inbound->forwardedDomainOf($mail) === $emailDomain;
+                if (!$direct && !$viaDomain) continue;
 
                 $messages[] = [
                     'id' => $messageId,
@@ -241,11 +248,15 @@ class CodeController extends Controller
                     'createdAt' => $createdAt,
                     'fromName' => (string) ($mail['from_name'] ?? ''),
                     'fromAddr' => (string) ($mail['from_address'] ?? ''),
-                    // đã khớp người nhận ở trên (có bỏ dấu chấm/+tag của Gmail)
+                    // đã khớp người nhận ở trên (có bỏ dấu chấm/+tag của Gmail),
+                    // mail chuyển tiếp theo domain thì khớp trong fetchHtml
                     'toAddr' => $email,
-                    'fetchHtml' => fn () => $messageId
-                        ? $this->extractHtml($inbound->find($messageId))
-                        : null,
+                    'fetchHtml' => function () use ($inbound, $messageId, $email, $viaDomain) {
+                        if (!$messageId) return null;
+                        $full = $inbound->find($messageId);
+                        if ($viaDomain && (!$full || !$inbound->isAddressedTo($full, $email))) return null;
+                        return $this->extractHtml($full);
+                    },
                 ];
             }
 

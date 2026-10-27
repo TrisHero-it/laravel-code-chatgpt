@@ -57,6 +57,38 @@ class InboundMailService
     }
 
     /**
+     * Domain gốc của mail do Cloudflare Email Routing CHUYỂN TIẾP từ domain
+     * khác (vd taphoavuive.store): envelope_from dạng
+     * "cfbounces+...@<domain gốc>", envelope_to vẫn là hộp chung nên không
+     * biết người nhận thật - phải mở mail đầy đủ xem header to (isAddressedTo).
+     */
+    public function forwardedDomainOf(array $mail): ?string
+    {
+        $from = (string) ($mail['envelope_from'] ?? $mail['envelope']['from'] ?? '');
+        if (preg_match('/^cfbounces\+[^@]*@(.+)$/i', $from, $m)) {
+            return mb_strtolower($m[1], 'UTF-8');
+        }
+
+        return null;
+    }
+
+    /**
+     * Header to/cc của mail đầy đủ (lấy từ find()) có chứa $email không.
+     */
+    public function isAddressedTo(array $mail, string $email): bool
+    {
+        $recipients = array_merge((array) ($mail['to'] ?? []), (array) ($mail['cc'] ?? []));
+        foreach ($recipients as $recipient) {
+            $address = is_array($recipient) ? ($recipient['address'] ?? null) : $recipient;
+            if ($this->sameAddress(is_string($address) ? $address : null, $email)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * So 2 địa chỉ, với Gmail thì bỏ dấu chấm và phần +tag (Gmail coi
      * a.b+x@gmail.com và ab@gmail.com là cùng một hộp).
      */
