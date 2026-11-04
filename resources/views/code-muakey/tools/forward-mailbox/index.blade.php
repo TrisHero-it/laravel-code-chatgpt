@@ -11,6 +11,12 @@
             <a href="{{ route('manager-tools') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Quay về Dashboard
             </a>
+            <form action="{{ route('forward-mailbox.check') }}" method="post">
+                @csrf
+                <button type="submit" class="btn btn-info" onclick="this.disabled=true; this.innerText='Đang kiểm tra...'; this.form.submit();">
+                    <i class="fas fa-check-circle"></i> Kiểm tra tất cả
+                </button>
+            </form>
         </div>
     </div>
 
@@ -24,6 +30,12 @@
         {{ session('success') }}
     </div>
     @endif
+
+    @isset($checkSummary)
+    <div class="alert {{ str_contains($checkSummary, ' 0 lỗi') ? 'alert-success' : 'alert-warning' }} mt-3">
+        {{ $checkSummary }}
+    </div>
+    @endisset
 
     @if ($errors->any())
     <div class="alert alert-danger mt-3">
@@ -50,6 +62,9 @@
                 <th scope="col">Email</th>
                 <th scope="col">Password</th>
                 <th scope="col">Trạng thái</th>
+                @isset($results)
+                <th scope="col">Kết quả kiểm tra</th>
+                @endisset
                 <th scope="col">Hành động</th>
             </tr>
         </thead>
@@ -65,6 +80,16 @@
                     <span class="badge bg-secondary">Đã tắt</span>
                     @endif
                 </td>
+                @isset($results)
+                <td>
+                    @php $result = $results[$mailbox->id] ?? null; @endphp
+                    @if ($result)
+                    <span class="{{ $result['ok'] ? 'text-success' : 'text-danger fw-bold' }}">
+                        {{ $result['ok'] ? '✔' : '✘' }} {{ $result['message'] }}
+                    </span>
+                    @endif
+                </td>
+                @endisset
                 <td class="d-flex" style="gap: 8px;">
                     <form action="{{ route('forward-mailbox.update', $mailbox->id) }}" method="post">
                         @csrf
@@ -80,7 +105,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="4" class="text-muted">Chưa có hòm nào.</td>
+                <td colspan="5" class="text-muted">Chưa có hòm nào.</td>
             </tr>
             @endforelse
         </tbody>

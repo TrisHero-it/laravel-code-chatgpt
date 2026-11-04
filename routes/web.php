@@ -40,6 +40,7 @@ Route::prefix('/tools')->middleware($toolsAuth)->group(function () {
     Route::get("/inbound-mail/{id}", [App\Http\Controllers\CodeMuakey\InboundMailController::class, 'show'])->name('inbound-mail.show');
 
     // Hòm chuyển tiếp mail.tm (ưu tiên 3 khi tra mã Netflix)
+    Route::post('/forward-mailbox/check', [App\Http\Controllers\CodeMuakey\ForwardMailboxController::class, 'check'])->name('forward-mailbox.check');
     Route::resource('forward-mailbox', App\Http\Controllers\CodeMuakey\ForwardMailboxController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 

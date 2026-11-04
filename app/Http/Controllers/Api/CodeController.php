@@ -233,7 +233,7 @@ class CodeController extends Controller
 
         $addresses = array_keys($tokens);
         $responses = Http::pool(fn (Pool $pool) => array_map(
-            fn ($address) => $pool->withToken($tokens[$address])->acceptJson()->timeout(10)
+            fn ($address) => $pool->withToken($tokens[$address])->timeout(10)
                 ->get(self::API_URL . "messages"),
             $addresses
         ));
@@ -396,7 +396,9 @@ class CodeController extends Controller
     private function getJson(string $url, string $token): ?array
     {
         try {
-            $decoded = Http::withToken($token)->acceptJson()->timeout(10)->get($url)->json();
+            // KHÔNG gửi Accept: application/json - mail.tm sẽ trả mảng trơn thay
+            // vì dạng hydra (hydra:member, @id) mà code đang đọc
+            $decoded = Http::withToken($token)->timeout(10)->get($url)->json();
         } catch (\Throwable $e) {
             return null;
         }
