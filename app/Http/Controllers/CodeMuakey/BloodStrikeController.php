@@ -165,6 +165,16 @@ class BloodStrikeController extends Controller
                 'goodsid' => 'g83naxx1ena.usd.099package.ally_100084',
                 'goodsinfo' => 'Carnival Lucky Bag Week Blood Strike Chỉ Cần ID',
                 'platform' => 'ios'
+            ],
+            [
+                'goodsid' => 'g83naxx1ena.usd.099package.ally_100103',
+                'goodsinfo' => 'Lucky Bag Week Blood Strike Chỉ Cần ID',
+                'platform' => 'ios'
+            ],
+            [
+                'goodsid' => 'g83naxx1ena.usd.099package.ally_100103',
+                'goodsinfo' => 'Lucky Bag Week Halloween Blood Strike Chỉ Cần ID',
+                'platform' => 'ios'
             ]
         ];
     }

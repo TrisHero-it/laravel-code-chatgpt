@@ -177,6 +177,11 @@ class RacingMasterController extends Controller
                 'platform' => 'ios'
             ],
             [
+                'goodsid' => 'g112sea.online.icebreakgift',
+                'goodsinfo' => 'Novice Pack Racing Master Top Up SEA Chỉ Cần ID',
+                'platform' => 'ios'
+            ],
+            [
                 'goodsid' => 'g112sea.online.bp4',
                 'goodsinfo' => "MP Combo Pack (Porsche 911 Carrera 4 (964) '89) Racing Master Top Up SEA Chỉ Cần ID",
                 'platform' => 'ios'

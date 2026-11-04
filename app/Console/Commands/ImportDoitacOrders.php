@@ -512,14 +512,26 @@ class ImportDoitacOrders extends Command
         return null;
     }
 
+    /**
+     * "Lucky Bag Week" là gói xoay vòng hằng tuần (cùng goodsid, đổi sub_item) và
+     * catalog còn giữ bản cũ "Carnival Lucky Bag Week" chứa trọn tên đó, nên phải
+     * ưu tiên khớp tuyệt đối trước, không thì đơn sẽ ăn nhầm gói tuần đã hết hạn.
+     */
     protected function matchBloodStrikeProductId(string $name): ?string
     {
         $clean = strtolower($this->normalizeProductName($name));
+        $products = (new BloodStrikeController())->getProducts();
 
-        foreach ((new BloodStrikeController())->getProducts() as $product) {
+        foreach ($products as $product) {
+            if (strtolower($this->normalizeProductName($product['goodsinfo'])) === $clean) {
+                return $product['goodsid'];
+            }
+        }
+
+        foreach ($products as $product) {
             $normalized = strtolower($this->normalizeProductName($product['goodsinfo']));
 
-            if ($normalized === $clean || str_contains($normalized, $clean) || str_contains($clean, $normalized)) {
+            if (str_contains($normalized, $clean) || str_contains($clean, $normalized)) {
                 return $product['goodsid'];
             }
         }
