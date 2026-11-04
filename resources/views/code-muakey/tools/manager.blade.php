@@ -134,6 +134,29 @@
             </div>
         </div>
 
+        <!-- Forward Mailbox Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-share-square fa-3x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="card-title mb-0">Hòm chuyển tiếp</h4>
+                            <p class="text-muted mb-0">mail.tm</p>
+                        </div>
+                    </div>
+                    <p class="card-text">Thêm / xoá các hòm mail.tm nhận thư Netflix chuyển tiếp.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('forward-mailbox.index') }}" class="btn btn-info">
+                            <i class="fas fa-list"></i> Quản lý hòm chuyển tiếp
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- <div class="col-md-5 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">

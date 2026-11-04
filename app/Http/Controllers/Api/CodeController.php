@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ForwardMailbox;
 use App\Models\Netflix;
 use App\Services\InboundMailService;
 use DateInterval;
@@ -12,7 +13,11 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use Exception;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CodeController extends Controller
@@ -35,6 +40,13 @@ class CodeController extends Controller
         $cutoff = clone $now;
         $cutoff->sub(new DateInterval('PT15M'));
 
+        // Thứ tự ưu tiên, tầng trước không có mail hợp lệ mới xuống tầng sau:
+        //   1. tài khoản mail.tm của chính email này (bảng netflixes)
+        //   2. hòm thư tổng inbound-mail
+        //   3. các hòm chuyển tiếp mail.tm đang bật (bảng forward_mailboxes)
+        $items = [];
+        $loginFailed = false;
+
         if ($account != null) {
             // json_encode trong getToken đã tự escape, không escape thêm ở đây
             $tokenResp = $this->getToken([
@@ -42,15 +54,39 @@ class CodeController extends Controller
                 'password' => trim((string) $account['password']),
             ]);
             $tokenValue = $tokenResp ? (json_decode($tokenResp)->token ?? null) : null;
-            if (!$tokenValue) {
-                return response()->json(['success' => false, 'message' => 'Không đăng nhập được hộp thư (sai mật khẩu hoặc email không thuộc mail.tm)'], 401);
+            if ($tokenValue) {
+                $items = $this->collectItems($this->listMailTmMessages($tokenValue), $email, $cutoff);
+            } else {
+                $loginFailed = true;
             }
-            $messages = $this->listMailTmMessages($tokenValue);
-        } else {
-            // Không có trong danh sách tài khoản mail.tm -> lấy từ hộp inbound-mail
-            $messages = $this->listInboundMessages($email, $cutoff);
         }
 
+        if (!$items) {
+            $items = $this->collectItems($this->listInboundMessages($email, $cutoff), $email, $cutoff);
+        }
+
+        if (!$items) {
+            $items = $this->collectItems($this->listRootMailboxMessages(), $email, $cutoff);
+        }
+
+        if (!$items && $loginFailed) {
+            return response()->json(['success' => false, 'message' => 'Không đăng nhập được hộp thư (sai mật khẩu hoặc email không thuộc mail.tm)'], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ok',
+            'data' => $items,
+        ]);
+    }
+
+    /**
+     * Lọc mail Netflix gửi tới $email trong mốc 15 phút, lấy link/mã - tối đa
+     * 10 mail mới nhất. $messages ở dạng chung của listMailTmMessages() /
+     * listInboundMessages().
+     */
+    private function collectItems(array $messages, string $email, DateTime $cutoff): array
+    {
         usort($messages, function ($a, $b) {
             return strtotime($b['createdAt'] ?? '') - strtotime($a['createdAt'] ?? '');
         });
@@ -112,11 +148,7 @@ class CodeController extends Controller
             if (count($items) >= 10) break;
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'ok',
-            'data' => $items,
-        ]);
+        return $items;
     }
 
     /**
@@ -185,7 +217,101 @@ class CodeController extends Controller
     private function listMailTmMessages(string $token): array
     {
         $decoded = $this->getJson(self::API_URL . "messages", $token);
-        $members = $decoded['hydra:member'] ?? null;
+
+        return $this->mapMailTmMembers($decoded['hydra:member'] ?? null, $token);
+    }
+
+    /**
+     * Mail của các hòm chuyển tiếp đang bật (bảng forward_mailboxes), gọi
+     * song song như bản cũ dùng token cứng. Token lấy bằng address + password;
+     * hộp nào bị 401 thì bỏ token cache để lượt sau đăng nhập lại.
+     */
+    private function listRootMailboxMessages(): array
+    {
+        $tokens = $this->rootMailboxTokens();
+        if (!$tokens) return [];
+
+        $addresses = array_keys($tokens);
+        $responses = Http::pool(fn (Pool $pool) => array_map(
+            fn ($address) => $pool->withToken($tokens[$address])->acceptJson()->timeout(10)
+                ->get(self::API_URL . "messages"),
+            $addresses
+        ));
+
+        $messages = [];
+        foreach ($addresses as $i => $address) {
+            $response = $responses[$i] ?? null;
+            if (!$response instanceof Response) continue;
+
+            if ($response->status() === 401) {
+                Cache::forget(ForwardMailbox::tokenCacheKey($address));
+                Log::warning('netflix: token hop goc bi tu choi', ['address' => $address]);
+                continue;
+            }
+
+            $messages = array_merge(
+                $messages,
+                $this->mapMailTmMembers($response->json('hydra:member'), $tokens[$address])
+            );
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Token mail.tm của từng hộp gốc: [address => token]. Token mail.tm không
+     * có hạn (không có exp) nên cache 1 ngày; hộp chưa có token thì đăng nhập
+     * song song, hộp nào sai mật khẩu thì ghi log và bỏ qua.
+     */
+    private function rootMailboxTokens(): array
+    {
+        $tokens = [];
+        $missing = [];
+        foreach (ForwardMailbox::where('active', true)->get(['address', 'password']) as $mailbox) {
+            $address = mb_strtolower(trim((string) $mailbox->address), 'UTF-8');
+            $password = trim((string) $mailbox->password);
+            if ($address === '' || $password === '') continue;
+
+            $cached = Cache::get(ForwardMailbox::tokenCacheKey($address));
+            if ($cached) {
+                $tokens[$address] = $cached;
+            } else {
+                $missing[$address] = $password;
+            }
+        }
+
+        if (!$missing) return $tokens;
+
+        $addresses = array_keys($missing);
+        $responses = Http::pool(fn (Pool $pool) => array_map(
+            fn ($address) => $pool->acceptJson()->timeout(10)
+                ->post(self::API_URL . "token", ['address' => $address, 'password' => $missing[$address]]),
+            $addresses
+        ));
+
+        foreach ($addresses as $i => $address) {
+            $response = $responses[$i] ?? null;
+            $token = $response instanceof Response ? $response->json('token') : null;
+            if (!is_string($token) || $token === '') {
+                Log::warning('netflix: khong dang nhap duoc hop goc', [
+                    'address' => $address,
+                    'status' => $response instanceof Response ? $response->status() : null,
+                ]);
+                continue;
+            }
+
+            Cache::put(ForwardMailbox::tokenCacheKey($address), $token, now()->addDay());
+            $tokens[$address] = $token;
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * Đưa danh sách hydra:member của mail.tm về cùng dạng với listInboundMessages().
+     */
+    private function mapMailTmMembers($members, string $token): array
+    {
         if (!is_array($members)) return [];
 
         $messages = [];
@@ -269,18 +395,12 @@ class CodeController extends Controller
 
     private function getJson(string $url, string $token): ?array
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer {$token}"
-        ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $body = curl_exec($ch);
-        curl_close($ch);
+        try {
+            $decoded = Http::withToken($token)->acceptJson()->timeout(10)->get($url)->json();
+        } catch (\Throwable $e) {
+            return null;
+        }
 
-        if (!$body) return null;
-        $decoded = json_decode($body, true);
         return is_array($decoded) ? $decoded : null;
     }
 
